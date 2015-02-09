@@ -36,10 +36,17 @@ class Node {
  public:
   Node();
   virtual ~Node();
-
+ protected:
+  virtual void ActivateChild(Node *);
+  virtual void ActivateNode();
+  virtual void DeactivateNode();
+  virtual void FinishNode();
+  virtual bool GetState();
  private:
   State state;
   NodeList peer_list;
+  NodeList children;
+  Node * parent;
 };
 }  // namespace task_net
 #endif  // INCLUDE_NODE_H_
