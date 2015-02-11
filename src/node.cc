@@ -20,7 +20,44 @@ namespace task_net {
 
 Node::Node() {
   state.owner = NULL;
+  state.active = false;
+  state.done = false;
 };
 
 Node::~Node() {};
+
+void Node::Activate() {
+  if (!state.active) {
+    state.active = true;
+    state.owner = this;
+    printf("Activating Node: %d\n", static_cast<int>(this));
+  }
+};
+
+void Node::Deactivate() {
+  if (state.active && state.owner == this) {
+    state.active = false;
+    state.owner = NULL;
+    printf("Deactivating Node; %d\n", static_cast<int>(this));
+  }
+}
+
+void Node::ActivateNode(Node * node) {
+  node.Activate();
+}
+
+void Node::DeactivateNode(Node * node) {
+  node.Deactivate();
+}
+
+void Node::Finish() {
+  Deactivate();
+  state.done = true;
+}
+
+State Node::GetState() {
+  return state;
+}
+
 }  // namepace task_net
+

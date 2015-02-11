@@ -23,6 +23,7 @@ class Node;
 struct State {
   Node * owner; // If owener is null node is inactive
   bool active;
+  bool done;
 };
 
 typedef std::vector<Node> NodeList;
@@ -37,11 +38,12 @@ class Node {
   Node();
   virtual ~Node();
  protected:
-  virtual void ActivateChild(Node *);
-  virtual void ActivateNode();
-  virtual void DeactivateNode();
-  virtual void FinishNode();
-  virtual bool GetState();
+  virtual void Activate();
+  virtual void Deactivate();
+  virtual void ActivateNode(Node *);
+  virtual void DeactivateNode(Node *);
+  virtual void Finish();
+  virtual State GetState();
  private:
   State state;
   NodeList peer_list;
