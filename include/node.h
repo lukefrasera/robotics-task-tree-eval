@@ -27,6 +27,8 @@ struct State {
 };
 
 typedef std::vector<Node> NodeList;
+typedef unsigned int uint32_t;
+
 /*
 Class: Node
 Definition: Base class for behavior network nodes. All nodes will inherit from
@@ -44,6 +46,23 @@ class Node {
   virtual void DeactivateNode(Node *);
   virtual void Finish();
   virtual State GetState();
+
+  // Messaging
+  virtual void SendToParent();
+  virtual void SendToChild(Node *);
+  virtual void SendToPeer(Node *);
+
+  // Receiving Threads
+  virtual void ReceiveFromParent();
+  virtual void ReceiveFromChildred();
+  virtual void ReceiveFromPeers();
+
+  // Main Node loop functions
+  virtual void NodeInit();
+  virtual uint32_t IsDone();
+  virtual float ActivationLevel();
+  virtual bool Precondition();
+  virtual uint32_t SpreadActivation();
  private:
   State state;
   NodeList peer_list;
