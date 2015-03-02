@@ -59,5 +59,21 @@ State Node::GetState() {
   return state;
 }
 
+void Node::SendToParent(Msg message) {}
+void Node::SendToChild(Node* node, Msg message) {}
+void Node::SendToPeer(Node* node, Msg message) {}
+
+void Node::ReceiveFromParent(Msg message) {}
+void Node::ReceiveFromChildren() {}
+void Node::ReceiveFromPeers() {}
+
+// Main Loop of the Node type Each Node Will have this fucnction called at each
+// times step to process node properties. Each node should run in its own thread
+void Node::NodeInit() {}
+uint32_t Node::IsDone();
+float Node::ActivationLevel() {}
+bool Node::Precondition() {}
+uint32_t Node::SpreadActivation() {}
+
 }  // namepace task_net
 

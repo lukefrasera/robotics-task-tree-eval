@@ -17,11 +17,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #ifndef INCLUDE_NODE_H_
 #define INCLUDE_NODE_H_
+#include <vector>
 namespace task_net {
 class Node;
 
 struct State {
-  Node * owner; // If owener is null node is inactive
+  Node * owner;  // If owener is null node is inactive
   bool active;
   bool done;
 };
@@ -39,18 +40,19 @@ class Node {
  public:
   Node();
   virtual ~Node();
+
  protected:
   virtual void Activate();
   virtual void Deactivate();
-  virtual void ActivateNode(Node *);
-  virtual void DeactivateNode(Node *);
+  virtual void ActivateNode(Node *node);
+  virtual void DeactivateNode(Node *node);
   virtual void Finish();
   virtual State GetState();
 
   // Messaging
-  virtual void SendToParent();
-  virtual void SendToChild(Node *);
-  virtual void SendToPeer(Node *);
+  virtual void SendToParent(Msg message);
+  virtual void SendToChild(Node *node, Msg message);
+  virtual void SendToPeer(Node *node, Msg message);
 
   // Receiving Threads
   virtual void ReceiveFromParent();
@@ -63,6 +65,7 @@ class Node {
   virtual float ActivationLevel();
   virtual bool Precondition();
   virtual uint32_t SpreadActivation();
+
  private:
   State state;
   NodeList peer_list;
