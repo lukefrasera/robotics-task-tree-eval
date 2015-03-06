@@ -71,6 +71,10 @@ class Node {
   NodeList peer_list;
   NodeList children;
   Node * parent;
+
+  // Publishers
+
+  // Subscribers
 };
 }  // namespace task_net
 #endif  // INCLUDE_NODE_H_
