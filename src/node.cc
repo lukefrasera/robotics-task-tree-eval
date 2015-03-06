@@ -22,9 +22,9 @@ Node::Node() {
   state.owner = NULL;
   state.active = false;
   state.done = false;
-};
+}
 
-Node::~Node() {};
+Node::~Node() {}
 
 void Node::Activate() {
   if (!state.active) {
@@ -32,7 +32,7 @@ void Node::Activate() {
     state.owner = this;
     printf("Activating Node: %d\n", static_cast<int>(this));
   }
-};
+}
 
 void Node::Deactivate() {
   if (state.active && state.owner == this) {
@@ -75,5 +75,5 @@ float Node::ActivationLevel() {}
 bool Node::Precondition() {}
 uint32_t Node::SpreadActivation() {}
 
-}  // namepace task_net
+}  // namespace task_net
 
