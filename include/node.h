@@ -18,13 +18,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef INCLUDE_NODE_H_
 #define INCLUDE_NODE_H_
 #include <ros/ros.h>
+#include <stdint.h>
+#include <ros/std_msgs.h>
 #include <vector>
-#include <cstdint>
 #include <string>
 namespace task_net {
 
 
-typedef NodeId_t string;
+typedef std::string NodeId_t;
 
 struct NodeBitmask {
   uint8_t type;
@@ -62,8 +63,8 @@ class Node {
   virtual State GetState();
 
   // Messaging
-  virtual void SendToParent(Msg message);
-  virtual void SendToChild(NodeId_t node, Msg message);
+  virtual void SendToParent(std_Msgs::String message);
+  virtual void SendToChild(NodeId_t node, std_Msgs::String message);
   virtual void SendToPeer(NodeId_t node, Msg message);
 
   // Receiving Threads
