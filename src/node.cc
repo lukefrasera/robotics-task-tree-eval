@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-#include "node.h"
+#include "../src/node.h"
 namespace task_net {
 
 Node::Node() {
@@ -42,11 +42,11 @@ void Node::Deactivate() {
   }
 }
 
-void Node::ActivateNode(Node * node) {
+void Node::ActivateNode(NodeId_t node) {
   node.Activate();
 }
 
-void Node::DeactivateNode(Node * node) {
+void Node::DeactivateNode(NodeId_t node) {
   node.Deactivate();
 }
 
@@ -60,8 +60,8 @@ State Node::GetState() {
 }
 
 void Node::SendToParent(Msg message) {}
-void Node::SendToChild(Node* node, Msg message) {}
-void Node::SendToPeer(Node* node, Msg message) {}
+void Node::SendToChild(NodeId_t node, Msg message) {}
+void Node::SendToPeer(NodeId_t node, Msg message) {}
 
 void Node::ReceiveFromParent(Msg message) {}
 void Node::ReceiveFromChildren() {}
@@ -76,4 +76,3 @@ bool Node::Precondition() {}
 uint32_t Node::SpreadActivation() {}
 
 }  // namespace task_net
-

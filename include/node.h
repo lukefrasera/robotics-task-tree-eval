@@ -17,18 +17,29 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #ifndef INCLUDE_NODE_H_
 #define INCLUDE_NODE_H_
+#include <ros/ros.h>
 #include <vector>
+#include <cstdint>
+#include <string>
 namespace task_net {
-class Node;
+
+
+typedef NodeId_t string;
+
+struct NodeBitmask {
+  uint8_t type;
+  uint8_t robot;
+  uint16_t node;
+};
 
 struct State {
-  Node * owner;  // If owener is null node is inactive
+  NodeId_t owner;  // If owener is null node is inactive
   bool active;
   bool done;
 };
 
-typedef std::vector<Node> NodeList;
-typedef unsigned int uint32_t;
+typedef std::vector<NodeId_t> NodeList;
+typedef std::vector<ros::Publisher> PubList;
 
 /*
 Class: Node
@@ -39,20 +50,21 @@ Author: Luke Fraser
 class Node {
  public:
   Node();
+  Node(NodeList peers_, NodeList children_)
   virtual ~Node();
 
  protected:
   virtual void Activate();
   virtual void Deactivate();
-  virtual void ActivateNode(Node *node);
-  virtual void DeactivateNode(Node *node);
+  virtual void ActivateNode(NodeId_t node);
+  virtual void DeactivateNode(NodeId_t node);
   virtual void Finish();
   virtual State GetState();
 
   // Messaging
   virtual void SendToParent(Msg message);
-  virtual void SendToChild(Node *node, Msg message);
-  virtual void SendToPeer(Node *node, Msg message);
+  virtual void SendToChild(NodeId_t node, Msg message);
+  virtual void SendToPeer(NodeId_t node, Msg message);
 
   // Receiving Threads
   virtual void ReceiveFromParent();
@@ -67,14 +79,21 @@ class Node {
   virtual uint32_t SpreadActivation();
 
  private:
-  State state;
-  NodeList peer_list;
-  NodeList children;
-  Node * parent;
+  State state_;
+  NodeList peer_;
+  NodeList children_;
+  NodeId_t parent_;
 
   // Publishers
+  PubList children_pub_list_;
+  PubList peer_pub_list_;
 
   // Subscribers
+  ros::Subscriber children_sub_;
+  ros::Subscriber peer_sub_;
+
+  // Node handler
+  ros::NodeHandle nh_;
 };
 }  // namespace task_net
 #endif  // INCLUDE_NODE_H_
