@@ -19,9 +19,28 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace task_net {
 
 Node::Node() {
-  state.owner = NULL;
+  state.owner = "";
   state.active = false;
   state.done = false;
+}
+
+Node::Node(NodeId_t name, NodeList peers, NodeList children, NodeId_t parent {
+  // Call base constructor to set state
+  Node::Node();
+
+  name_ = name;
+  peers_    = peers;
+  children_ = children;
+  parent_   = parent;
+
+  // Get bitmask
+  mask_ = GetBitmask(name);
+  // Setup Publisher/subscribers
+  InitializeSubscriber(name_);
+  InitializePublishers(children_);
+  InitializePublishers(peers_);
+  // InitializePublishers(children);
+  // TODO(Luke FRaser) need to setup parent publication. This method isn't good
 }
 
 Node::~Node() {}
@@ -74,5 +93,7 @@ uint32_t Node::IsDone();
 float Node::ActivationLevel() {}
 bool Node::Precondition() {}
 uint32_t Node::SpreadActivation() {}
-
+void Node::InitializeSubscriber(NodeId_t topic) {}
+void Node::InitializePublishers(NodeList topics) {}
+NodeBitmask GetBitmask(NodeId_t name);
 }  // namespace task_net

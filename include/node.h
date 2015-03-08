@@ -50,7 +50,7 @@ Author: Luke Fraser
 class Node {
  public:
   Node();
-  Node(NodeList peers_, NodeList children_)
+  Node(NodeId_t name, NodeList peers, NodeList children, NodeId_t parent);
   virtual ~Node();
 
  protected:
@@ -79,8 +79,14 @@ class Node {
   virtual uint32_t SpreadActivation();
 
  private:
+  virtual void InitalizeSubscriber(NodeId_t topic);
+  virtual void InitalizePublishers(NodeList topics);
+  virtual NodeBitmask GetBitmask(NodeId_t name);
+
   State state_;
-  NodeList peer_;
+  NodeId_t name_;
+  NodeBitmask mask_;
+  NodeList peers_;
   NodeList children_;
   NodeId_t parent_;
 
