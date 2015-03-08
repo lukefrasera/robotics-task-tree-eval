@@ -106,6 +106,8 @@ include_directories(
 ## Declare a cpp executable
 # add_executable(robotics-task-tree-eval_node src/robotics-task-tree-eval_node.cpp)
 
+add_executable(robotics-task-tree-eval src/behavior_network.cc src/node.cc)
+
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(robotics-task-tree-eval_node robotics-task-tree-eval_generate_messages_cpp)
