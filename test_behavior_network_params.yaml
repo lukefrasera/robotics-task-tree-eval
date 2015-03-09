@@ -1,0 +1,4 @@
+name: "test_node"
+peers: ['peer_1', 'peer_2']
+children: ['child_1', 'child_2', 'child_3']
+parent: "test_parent"
