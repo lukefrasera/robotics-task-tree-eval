@@ -19,14 +19,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace task_net {
 
 Node::Node() {
-  state.owner = "";
-  state.active = false;
-  state.done = false;
+  state_.owner = "";
+  state_.active = false;
+  state_.done = false;
 }
 
-Node::Node(NodeId_t name, NodeList peers, NodeList children, NodeId_t parent {
+Node::Node(NodeId_t name, NodeList peers, NodeList children, NodeId_t parent) {
   // Call base constructor to set state
-  Node::Node();
+  state_.owner = "";
+  state_.active = false;
+  state_.done = false;
 
   name_ = name;
   peers_    = peers;
@@ -34,7 +36,7 @@ Node::Node(NodeId_t name, NodeList peers, NodeList children, NodeId_t parent {
   parent_   = parent;
 
   // Get bitmask
-  mask_ = GetBitmask(name);
+  mask_ = GetBitmask(name_);
   // Setup Publisher/subscribers
   InitializeSubscriber(name_);
   InitializePublishers(children_);
@@ -46,54 +48,50 @@ Node::Node(NodeId_t name, NodeList peers, NodeList children, NodeId_t parent {
 Node::~Node() {}
 
 void Node::Activate() {
-  if (!state.active) {
-    state.active = true;
-    state.owner = this;
-    printf("Activating Node: %d\n", static_cast<int>(this));
+  if (!state_.active) {
+    state_.active = true;
+    state_.owner = name_;
+    printf("Activating Node: %s\n", name_.c_str());
   }
 }
 
 void Node::Deactivate() {
-  if (state.active && state.owner == this) {
-    state.active = false;
-    state.owner = NULL;
-    printf("Deactivating Node; %d\n", static_cast<int>(this));
+  if (state_.active && state_.owner == name_.c_str()) {
+    state_.active = false;
+    state_.owner = "";
+    printf("Deactivating Node; %s\n", name_.c_str());
   }
 }
 
-void Node::ActivateNode(NodeId_t node) {
-  node.Activate();
-}
+void Node::ActivateNode(NodeId_t node) {}
 
-void Node::DeactivateNode(NodeId_t node) {
-  node.Deactivate();
-}
+void Node::DeactivateNode(NodeId_t node) {}
 
 void Node::Finish() {
   Deactivate();
-  state.done = true;
+  state_.done = true;
 }
 
 State Node::GetState() {
-  return state;
+  return state_;
 }
 
-void Node::SendToParent(Msg message) {}
-void Node::SendToChild(NodeId_t node, Msg message) {}
-void Node::SendToPeer(NodeId_t node, Msg message) {}
+void Node::SendToParent(std_msgs::String message) {}
+void Node::SendToChild(NodeId_t node, std_msgs::String message) {}
+void Node::SendToPeer(NodeId_t node, std_msgs::String message) {}
 
-void Node::ReceiveFromParent(Msg message) {}
+void Node::ReceiveFromParent(std_msgs::String message) {}
 void Node::ReceiveFromChildren() {}
 void Node::ReceiveFromPeers() {}
 
 // Main Loop of the Node type Each Node Will have this fucnction called at each
 // times step to process node properties. Each node should run in its own thread
 void Node::NodeInit() {}
-uint32_t Node::IsDone();
+uint32_t Node::IsDone() {}
 float Node::ActivationLevel() {}
 bool Node::Precondition() {}
 uint32_t Node::SpreadActivation() {}
 void Node::InitializeSubscriber(NodeId_t topic) {}
 void Node::InitializePublishers(NodeList topics) {}
-NodeBitmask GetBitmask(NodeId_t name);
+NodeBitmask Node::GetBitmask(NodeId_t name) {}
 }  // namespace task_net

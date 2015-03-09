@@ -20,6 +20,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "../include/node.h"
 
 int main(int argc, char const *argv[]) {
-  Node test();
+  task_net::Node test();
   return 0;
 }

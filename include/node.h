@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define INCLUDE_NODE_H_
 #include <ros/ros.h>
 #include <stdint.h>
-#include <ros/std_msgs.h>
+#include <std_msgs/String.h>
 #include <vector>
 #include <string>
 namespace task_net {
@@ -63,13 +63,13 @@ class Node {
   virtual State GetState();
 
   // Messaging
-  virtual void SendToParent(std_Msgs::String message);
-  virtual void SendToChild(NodeId_t node, std_Msgs::String message);
-  virtual void SendToPeer(NodeId_t node, Msg message);
+  virtual void SendToParent(std_msgs::String message);
+  virtual void SendToChild(NodeId_t node, std_msgs::String message);
+  virtual void SendToPeer(NodeId_t node, std_msgs::String message);
 
   // Receiving Threads
-  virtual void ReceiveFromParent();
-  virtual void ReceiveFromChildred();
+  virtual void ReceiveFromParent(std_msgs::String message);
+  virtual void ReceiveFromChildren();
   virtual void ReceiveFromPeers();
 
   // Main Node loop functions
@@ -80,8 +80,8 @@ class Node {
   virtual uint32_t SpreadActivation();
 
  private:
-  virtual void InitalizeSubscriber(NodeId_t topic);
-  virtual void InitalizePublishers(NodeList topics);
+  virtual void InitializeSubscriber(NodeId_t topic);
+  virtual void InitializePublishers(NodeList topics);
   virtual NodeBitmask GetBitmask(NodeId_t name);
 
   State state_;
