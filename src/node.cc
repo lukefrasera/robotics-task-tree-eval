@@ -45,8 +45,7 @@ Node::Node(NodeId_t name, NodeList peers, NodeList children, NodeId_t parent) {
   InitializeSubscriber(name_);
   InitializePublishers(children_, children_pub_list_);
   InitializePublishers(peers_, peer_pub_list_);
-  // InitializePublishers(children);
-  // TODO(Luke FRaser) need to setup parent publication. This method isn't good
+  InitializePublisher(parent_, &parent_pub_);
 }
 
 Node::~Node() {}
@@ -98,21 +97,21 @@ uint32_t Node::SpreadActivation() {}
 void Node::InitializeSubscriber(NodeId_t topic) {
   std::string peer_topic = topic + "_peers";
 
+#ifdef DEBUG
+  printf("[SUBSCRIBER] - Creating Peer Topic: %s\n", peer_topic.c_str());
+#endif
   peer_sub_     = nh_.subscribe(peer_topic,
     PUB_SUB_QUEUE_SIZE,
     &Node::ReceiveFromPeers,
     this);
-#ifdef DEBUG
-  printf("[SUBSCRIBER] - Creating Peer Topic: %s\n", peer_topic.c_str());
-#endif
 
+#ifdef DEBUG
+  printf("[SUBSCRIBER] - Creating Child Topic: %s\n", topic.c_str());
+#endif
   children_sub_ = nh_.subscribe(topic,
     PUB_SUB_QUEUE_SIZE,
     &Node::ReceiveFromChildren,
     this);
-#ifdef DEBUG
-  printf("[SUBSCRIBER] - Creating Child Topic: %s\n", topic.c_str());
-#endif
 }
 void Node::InitializePublishers(NodeList topics, PubList &pub) {
   for (std::vector<NodeId_t>::iterator it = topics.begin();
@@ -127,5 +126,13 @@ void Node::InitializePublishers(NodeList topics, PubList &pub) {
 #endif
   }
 }
+
+void Node::InitializePublisher(NodeId_t topic, ros::Publisher *pub) {
+#ifdef DEBUG
+  printf("[PUBLISHER] - Creating Topic: %s\n", topic.c_str());
+#endif
+  (*pub) = nh_.advertise<std_msgs::String>(topic, PUB_SUB_QUEUE_SIZE);
+}
+
 NodeBitmask Node::GetBitmask(NodeId_t name) {}
 }  // namespace task_net

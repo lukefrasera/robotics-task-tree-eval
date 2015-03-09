@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "../include/node.h"
 
 int main(int argc, char *argv[]) {
-  ros::init(argc, argv, "Behavior_network");
+  ros::init(argc, argv, "behavior_network");
   ros::NodeHandle nh("~");
 
   std::string name_param;

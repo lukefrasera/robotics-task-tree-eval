@@ -69,7 +69,8 @@ class Node {
 
   // Receiving Threads
   virtual void ReceiveFromParent(std_msgs::String message);
-  virtual void ReceiveFromChildren(boost::shared_ptr<std_msgs::String const> msg);
+  virtual void ReceiveFromChildren(
+    boost::shared_ptr<std_msgs::String const> msg);
   virtual void ReceiveFromPeers(boost::shared_ptr<std_msgs::String const> msg);
 
   // Main Node loop functions
@@ -82,6 +83,7 @@ class Node {
  private:
   virtual void InitializeSubscriber(NodeId_t topic);
   virtual void InitializePublishers(NodeList topics, PubList &pub);
+  virtual void InitializePublisher(NodeId_t topic, ros::Publisher *pub);
   virtual NodeBitmask GetBitmask(NodeId_t name);
 
   State state_;
@@ -94,6 +96,7 @@ class Node {
   // Publishers
   PubList children_pub_list_;
   PubList peer_pub_list_;
+  ros::Publisher parent_pub_;
 
   // Subscribers
   ros::Subscriber children_sub_;
