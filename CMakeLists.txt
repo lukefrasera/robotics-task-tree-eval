@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(robotics-task-tree-eval)
 
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -9,6 +10,14 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
 )
+if(${CMAKE_BUILD_TYPE} STREQUAL Debug)
+  set(DEBUG 1)
+  message("====================================================================")
+  message("=============================DEBUG MODE=============================")
+  message("====================================================================")
+  add_definitions(-DDEBUG=${DEBUG})
+endif(${CMAKE_BUILD_TYPE} STREQUAL Debug)
+
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)

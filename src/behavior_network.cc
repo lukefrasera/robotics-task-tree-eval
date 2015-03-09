@@ -17,9 +17,32 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <ros/ros.h>
+#include <string>
 #include "../include/node.h"
 
-int main(int argc, char const *argv[]) {
-  task_net::Node test();
+int main(int argc, char *argv[]) {
+  ros::init(argc, argv, "Behavior_network");
+  ros::NodeHandle nh("~");
+
+  std::string name_param;
+  std::vector<std::string> peers_param;
+  std::vector<std::string> children_param;
+  std::string parent_param;
+
+  if (nh.getParam("name", name_param)) {
+    printf("%s\n", name_param.c_str());
+  }
+  if (nh.getParam("peers", peers_param)) {
+    printf("%s\n", peers_param[0].c_str());
+  }
+  if (nh.getParam("children", children_param)) {
+    printf("%s\n", children_param[0].c_str());
+  }
+  if (nh.getParam("parent", parent_param)) {
+    printf("%s\n", parent_param.c_str());
+  }
+
+  task_net::Node test(name_param, peers_param, children_param, parent_param);
+  ros::spin();
   return 0;
 }

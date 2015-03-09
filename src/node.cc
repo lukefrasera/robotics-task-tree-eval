@@ -16,7 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include "../include/node.h"
+#include <string>
+#include <vector>
 namespace task_net {
+
+#define PUB_SUB_QUEUE_SIZE 100
 
 Node::Node() {
   state_.owner = "";
@@ -39,8 +43,8 @@ Node::Node(NodeId_t name, NodeList peers, NodeList children, NodeId_t parent) {
   mask_ = GetBitmask(name_);
   // Setup Publisher/subscribers
   InitializeSubscriber(name_);
-  InitializePublishers(children_);
-  InitializePublishers(peers_);
+  InitializePublishers(children_, children_pub_list_);
+  InitializePublishers(peers_, peer_pub_list_);
   // InitializePublishers(children);
   // TODO(Luke FRaser) need to setup parent publication. This method isn't good
 }
@@ -81,8 +85,8 @@ void Node::SendToChild(NodeId_t node, std_msgs::String message) {}
 void Node::SendToPeer(NodeId_t node, std_msgs::String message) {}
 
 void Node::ReceiveFromParent(std_msgs::String message) {}
-void Node::ReceiveFromChildren() {}
-void Node::ReceiveFromPeers() {}
+void Node::ReceiveFromChildren(boost::shared_ptr<std_msgs::String const> msg) {}
+void Node::ReceiveFromPeers(boost::shared_ptr<std_msgs::String const> msg) {}
 
 // Main Loop of the Node type Each Node Will have this fucnction called at each
 // times step to process node properties. Each node should run in its own thread
@@ -91,7 +95,37 @@ uint32_t Node::IsDone() {}
 float Node::ActivationLevel() {}
 bool Node::Precondition() {}
 uint32_t Node::SpreadActivation() {}
-void Node::InitializeSubscriber(NodeId_t topic) {}
-void Node::InitializePublishers(NodeList topics) {}
+void Node::InitializeSubscriber(NodeId_t topic) {
+  std::string peer_topic = topic + "_peers";
+
+  peer_sub_     = nh_.subscribe(peer_topic,
+    PUB_SUB_QUEUE_SIZE,
+    &Node::ReceiveFromPeers,
+    this);
+#ifdef DEBUG
+  printf("[SUBSCRIBER] - Creating Peer Topic: %s\n", peer_topic.c_str());
+#endif
+
+  children_sub_ = nh_.subscribe(topic,
+    PUB_SUB_QUEUE_SIZE,
+    &Node::ReceiveFromChildren,
+    this);
+#ifdef DEBUG
+  printf("[SUBSCRIBER] - Creating Child Topic: %s\n", topic.c_str());
+#endif
+}
+void Node::InitializePublishers(NodeList topics, PubList &pub) {
+  for (std::vector<NodeId_t>::iterator it = topics.begin();
+    it != topics.end();
+    ++it) {
+    ros::Publisher topic = nh_.advertise<std_msgs::String>(*it,
+      PUB_SUB_QUEUE_SIZE);
+
+    pub.push_back(topic);
+#if DEBUG
+    printf("[PUBLISHER] - Creating Topic: %s\n", (*it).c_str());
+#endif
+  }
+}
 NodeBitmask Node::GetBitmask(NodeId_t name) {}
 }  // namespace task_net
