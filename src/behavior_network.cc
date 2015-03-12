@@ -17,6 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <ros/ros.h>
+#include <boost/thread/thread.hpp>
+#include <vector>
 #include <string>
 #include "../include/node.h"
 
@@ -41,7 +43,7 @@ int main(int argc, char *argv[]) {
   if (nh.getParam("parent", parent_param)) {
     printf("%s\n", parent_param.c_str());
   }
-
+// TODO(Luke Fraser): Need to setup multithreaded spinner.
   task_net::Node test(name_param, peers_param, children_param, parent_param);
   ros::spin();
   return 0;
