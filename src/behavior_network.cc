@@ -18,9 +18,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <ros/ros.h>
 #include <boost/thread/thread.hpp>
+#include <boost/date_time.hpp>
 #include <vector>
 #include <string>
 #include "../include/node.h"
+
+void PubFunction(task_net::Node *node, boost::posix_time::millisec mtime);
 
 int main(int argc, char *argv[]) {
   ros::init(argc, argv, "behavior_network");
@@ -43,8 +46,24 @@ int main(int argc, char *argv[]) {
   if (nh.getParam("parent", parent_param)) {
     printf("%s\n", parent_param.c_str());
   }
-// TODO(Luke Fraser): Need to setup multithreaded spinner.
-  task_net::Node test(name_param, peers_param, children_param, parent_param);
+
+  task_net::Node * test;
+  test = new task_net::Node(name_param,
+                            peers_param,
+                            children_param,
+                            parent_param);
+
+  // Start publisher thread
+  boost::posix_time::millisec mtime(1000);
+  boost::thread node_publisher(PubFunction, test, mtime);
   ros::spin();
+  delete test;
   return 0;
+}
+
+void PubFunction(task_net::Node *node, boost::posix_time::millisec mtime) {
+  while (true) {
+    node->Update();
+    boost::this_thread::sleep(mtime);
+  }
 }

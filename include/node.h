@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef INCLUDE_NODE_H_
 #define INCLUDE_NODE_H_
 #include <ros/ros.h>
+#include <ros/callback_queue.h>
 #include <stdint.h>
 #include <std_msgs/String.h>
 #include <vector>
@@ -54,6 +55,7 @@ class Node {
   Node(NodeId_t name, NodeList peers, NodeList children, NodeId_t parent);
   virtual ~Node();
 
+  virtual void Update();
  protected:
   virtual void Activate();
   virtual void Deactivate();
@@ -79,7 +81,11 @@ class Node {
   virtual float ActivationLevel();
   virtual bool Precondition();
   virtual uint32_t SpreadActivation();
+  virtual ros::CallbackQueue* GetPubCallbackQueue();
+  virtual ros::CallbackQueue*  GetSubCallbackQueue();
 
+  ros::CallbackQueue pub_callback_queue_;
+  ros::CallbackQueue sub_callback_queue_;
  private:
   virtual void InitializeSubscriber(NodeId_t topic);
   virtual void InitializePublishers(NodeList topics, PubList &pub);
@@ -103,7 +109,8 @@ class Node {
   ros::Subscriber peer_sub_;
 
   // Node handler
-  ros::NodeHandle nh_;
+  ros::NodeHandle pub_nh_;
+  ros::NodeHandle sub_nh_;
 };
 }  // namespace task_net
 #endif  // INCLUDE_NODE_H_

@@ -29,12 +29,10 @@ Node::Node() {
 }
 
 Node::Node(NodeId_t name, NodeList peers, NodeList children, NodeId_t parent) {
-  // Call base constructor to set state
-  state_.owner = "";
-  state_.active = false;
-  state_.done = false;
+  pub_nh_.setCallbackQueue(&pub_callback_queue_);
+  sub_nh_.setCallbackQueue(&sub_callback_queue_);
 
-  name_ = name;
+  name_     = name;
   peers_    = peers;
   children_ = children;
   parent_   = parent;
@@ -89,18 +87,18 @@ void Node::ReceiveFromPeers(boost::shared_ptr<std_msgs::String const> msg) {}
 
 // Main Loop of the Node type Each Node Will have this fucnction called at each
 // times step to process node properties. Each node should run in its own thread
-void Node::NodeInit() {}
+void Node::Update() {}
+void Node::NodeInit() {} // Iinti shouwl intialize the nodes threads. Main function should only be used to setup callbackqueues and spinners
 uint32_t Node::IsDone() {}
 float Node::ActivationLevel() {}
 bool Node::Precondition() {}
 uint32_t Node::SpreadActivation() {}
 void Node::InitializeSubscriber(NodeId_t topic) {
   std::string peer_topic = topic + "_peers";
-
 #ifdef DEBUG
   printf("[SUBSCRIBER] - Creating Peer Topic: %s\n", peer_topic.c_str());
 #endif
-  peer_sub_     = nh_.subscribe(peer_topic,
+  peer_sub_     = sub_nh_.subscribe(peer_topic,
     PUB_SUB_QUEUE_SIZE,
     &Node::ReceiveFromPeers,
     this);
@@ -108,7 +106,7 @@ void Node::InitializeSubscriber(NodeId_t topic) {
 #ifdef DEBUG
   printf("[SUBSCRIBER] - Creating Child Topic: %s\n", topic.c_str());
 #endif
-  children_sub_ = nh_.subscribe(topic,
+  children_sub_ = sub_nh_.subscribe(topic,
     PUB_SUB_QUEUE_SIZE,
     &Node::ReceiveFromChildren,
     this);
@@ -117,7 +115,7 @@ void Node::InitializePublishers(NodeList topics, PubList &pub) {
   for (std::vector<NodeId_t>::iterator it = topics.begin();
     it != topics.end();
     ++it) {
-    ros::Publisher topic = nh_.advertise<std_msgs::String>(*it,
+    ros::Publisher topic = pub_nh_.advertise<std_msgs::String>(*it,
       PUB_SUB_QUEUE_SIZE);
 
     pub.push_back(topic);
@@ -131,8 +129,15 @@ void Node::InitializePublisher(NodeId_t topic, ros::Publisher *pub) {
 #ifdef DEBUG
   printf("[PUBLISHER] - Creating Topic: %s\n", topic.c_str());
 #endif
-  (*pub) = nh_.advertise<std_msgs::String>(topic, PUB_SUB_QUEUE_SIZE);
+  (*pub) = pub_nh_.advertise<std_msgs::String>(topic, PUB_SUB_QUEUE_SIZE);
 }
 
 NodeBitmask Node::GetBitmask(NodeId_t name) {}
+
+ros::CallbackQueue* Node::GetPubCallbackQueue() {
+  return &pub_callback_queue_;
+}
+ros::CallbackQueue* Node::GetSubCallbackQueue() {
+  return &sub_callback_queue_;
+}
 }  // namespace task_net
