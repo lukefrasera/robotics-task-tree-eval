@@ -28,9 +28,15 @@ Node::Node() {
   state_.done = false;
 }
 
-Node::Node(NodeId_t name, NodeList peers, NodeList children, NodeId_t parent) {
-  pub_nh_.setCallbackQueue(&pub_callback_queue_);
-  sub_nh_.setCallbackQueue(&sub_callback_queue_);
+Node::Node(NodeId_t name, NodeList peers, NodeList children, NodeId_t parent,
+  bool use_local_callback_queue) {
+  if (use_local_callback_queue) {
+  #ifdef DEBUG
+    printf("Local Callback Queues\n");
+  #endif
+    pub_nh_.setCallbackQueue(pub_callback_queue_);
+    sub_nh_.setCallbackQueue(sub_callback_queue_);
+  }
 
   name_     = name;
   peers_    = peers;
@@ -41,8 +47,8 @@ Node::Node(NodeId_t name, NodeList peers, NodeList children, NodeId_t parent) {
   mask_ = GetBitmask(name_);
   // Setup Publisher/subscribers
   InitializeSubscriber(name_);
-  InitializePublishers(children_, children_pub_list_);
-  InitializePublishers(peers_, peer_pub_list_);
+  InitializePublishers(children_, &children_pub_list_);
+  InitializePublishers(peers_, &peer_pub_list_);
   InitializePublisher(parent_, &parent_pub_);
 }
 
@@ -77,9 +83,19 @@ State Node::GetState() {
   return state_;
 }
 
-void Node::SendToParent(std_msgs::String message) {}
-void Node::SendToChild(NodeId_t node, std_msgs::String message) {}
-void Node::SendToPeer(NodeId_t node, std_msgs::String message) {}
+void Node::SendToParent(std_msgs::String message) {
+  parent_pub_.publish(message);
+}
+void Node::SendToChild(NodeBitmask node, std_msgs::String message) {
+  // get publisher for specific node
+
+  // publish message to the specific child
+}
+void Node::SendToPeer(NodeId_t node, std_msgs::String message) {
+  // get publisher for specific node
+
+  // publish to peer
+}
 
 void Node::ReceiveFromParent(std_msgs::String message) {}
 void Node::ReceiveFromChildren(boost::shared_ptr<std_msgs::String const> msg) {}
@@ -87,8 +103,16 @@ void Node::ReceiveFromPeers(boost::shared_ptr<std_msgs::String const> msg) {}
 
 // Main Loop of the Node type Each Node Will have this fucnction called at each
 // times step to process node properties. Each node should run in its own thread
-void Node::Update() {}
-void Node::NodeInit() {} // Iinti shouwl intialize the nodes threads. Main function should only be used to setup callbackqueues and spinners
+void Node::Update() {
+  std::string hello = "hello";
+  std_msgs::String msg;
+  msg.data = hello;
+  parent_pub_.publish(msg);
+}
+void Node::NodeInit() {
+  // Initialize node threads
+}  // Iinti shouwl intialize the nodes threads. Main function should only be
+  //  used to setup callbackqueues and spinners
 uint32_t Node::IsDone() {}
 float Node::ActivationLevel() {}
 bool Node::Precondition() {}
@@ -111,16 +135,16 @@ void Node::InitializeSubscriber(NodeId_t topic) {
     &Node::ReceiveFromChildren,
     this);
 }
-void Node::InitializePublishers(NodeList topics, PubList &pub) {
+void Node::InitializePublishers(NodeList topics, PubList *pub) {
   for (std::vector<NodeId_t>::iterator it = topics.begin();
     it != topics.end();
     ++it) {
     ros::Publisher topic = pub_nh_.advertise<std_msgs::String>(*it,
       PUB_SUB_QUEUE_SIZE);
 
-    pub.push_back(topic);
+    pub->push_back(topic);
 #if DEBUG
-    printf("[PUBLISHER] - Creating Topic: %s\n", (*it).c_str());
+    printf("[PUBLISHER] - Creating Topic: %s\n", it->c_str());
 #endif
   }
 }
@@ -133,11 +157,12 @@ void Node::InitializePublisher(NodeId_t topic, ros::Publisher *pub) {
 }
 
 NodeBitmask Node::GetBitmask(NodeId_t name) {}
+NodeId_t Node::GetNodeId(NodeBitmask id) {}
 
 ros::CallbackQueue* Node::GetPubCallbackQueue() {
-  return &pub_callback_queue_;
+  return pub_callback_queue_;
 }
 ros::CallbackQueue* Node::GetSubCallbackQueue() {
-  return &sub_callback_queue_;
+  return sub_callback_queue_;
 }
 }  // namespace task_net

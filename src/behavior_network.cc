@@ -51,7 +51,8 @@ int main(int argc, char *argv[]) {
   test = new task_net::Node(name_param,
                             peers_param,
                             children_param,
-                            parent_param);
+                            parent_param,
+                            true);
 
   // Start publisher thread
   boost::posix_time::millisec mtime(1000);

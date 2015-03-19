@@ -52,10 +52,12 @@ Author: Luke Fraser
 class Node {
  public:
   Node();
-  Node(NodeId_t name, NodeList peers, NodeList children, NodeId_t parent);
+  Node(NodeId_t name, NodeList peers, NodeList children, NodeId_t parent,
+    bool use_local_callback_queue = false);
   virtual ~Node();
 
   virtual void Update();
+
  protected:
   virtual void Activate();
   virtual void Deactivate();
@@ -66,7 +68,7 @@ class Node {
 
   // Messaging
   virtual void SendToParent(std_msgs::String message);
-  virtual void SendToChild(NodeId_t node, std_msgs::String message);
+  virtual void SendToChild(NodeBitmask node, std_msgs::String message);
   virtual void SendToPeer(NodeId_t node, std_msgs::String message);
 
   // Receiving Threads
@@ -82,15 +84,17 @@ class Node {
   virtual bool Precondition();
   virtual uint32_t SpreadActivation();
   virtual ros::CallbackQueue* GetPubCallbackQueue();
-  virtual ros::CallbackQueue*  GetSubCallbackQueue();
+  virtual ros::CallbackQueue* GetSubCallbackQueue();
 
-  ros::CallbackQueue pub_callback_queue_;
-  ros::CallbackQueue sub_callback_queue_;
+  ros::CallbackQueue *pub_callback_queue_;
+  ros::CallbackQueue *sub_callback_queue_;
+
  private:
   virtual void InitializeSubscriber(NodeId_t topic);
-  virtual void InitializePublishers(NodeList topics, PubList &pub);
+  virtual void InitializePublishers(NodeList topics, PubList *pub);
   virtual void InitializePublisher(NodeId_t topic, ros::Publisher *pub);
   virtual NodeBitmask GetBitmask(NodeId_t name);
+  virtual NodeId_t GetNodeId(NodeBitmask id);
 
   State state_;
   NodeId_t name_;
