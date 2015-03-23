@@ -35,7 +35,7 @@ struct NodeBitmask {
 };
 
 struct State {
-  NodeId_t owner;  // If owener is null node is inactive
+  NodeBitmask owner;  // If owener is null node is inactive
   bool active;
   bool done;
 };
@@ -53,7 +53,8 @@ class Node {
  public:
   Node();
   Node(NodeId_t name, NodeList peers, NodeList children, NodeId_t parent,
-    bool use_local_callback_queue = false);
+    bool use_local_callback_queue = false,
+    boost::posix_time::millisec mtime=boost::posix_time::millisec(1000));
   virtual ~Node();
 
   virtual void Update();
@@ -75,10 +76,10 @@ class Node {
   virtual void ReceiveFromParent(std_msgs::String message);
   virtual void ReceiveFromChildren(
     boost::shared_ptr<std_msgs::String const> msg);
-  virtual void ReceiveFromPeers(boost::shared_ptr<std_msgs::String const> msg);
+  virtual void ReceiveFromPeers(const std_msgs::StringConstPtr & msg);
 
   // Main Node loop functions
-  virtual void NodeInit();
+  virtual void NodeInit(boost::posix_time::millisec mtime);
   virtual uint32_t IsDone();
   virtual float ActivationLevel();
   virtual bool Precondition();
@@ -90,6 +91,7 @@ class Node {
   ros::CallbackQueue *sub_callback_queue_;
 
  private:
+  virtual void PublishStatus();
   virtual void InitializeSubscriber(NodeId_t topic);
   virtual void InitializePublishers(NodeList topics, PubList *pub);
   virtual void InitializePublisher(NodeId_t topic, ros::Publisher *pub);
@@ -107,6 +109,7 @@ class Node {
   PubList children_pub_list_;
   PubList peer_pub_list_;
   ros::Publisher parent_pub_;
+  ros::Publisher self_pub_;
 
   // Subscribers
   ros::Subscriber children_sub_;
@@ -115,6 +118,9 @@ class Node {
   // Node handler
   ros::NodeHandle pub_nh_;
   ros::NodeHandle sub_nh_;
+
+  // Threads
+  boost::thread *update_thread;
 };
 }  // namespace task_net
 #endif  // INCLUDE_NODE_H_

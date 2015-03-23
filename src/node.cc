@@ -16,20 +16,22 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include "../include/node.h"
+#include <boost/thread/thread.hpp>
+#include <boost/date_time.hpp>
 #include <string>
 #include <vector>
 namespace task_net {
 
 #define PUB_SUB_QUEUE_SIZE 100
+#define STATE_MSG_LEN (sizeof(State)+1)
 
 Node::Node() {
-  state_.owner = "";
   state_.active = false;
   state_.done = false;
 }
 
 Node::Node(NodeId_t name, NodeList peers, NodeList children, NodeId_t parent,
-  bool use_local_callback_queue) {
+  bool use_local_callback_queue, boost::posix_time::millisec mtime) {
   if (use_local_callback_queue) {
   #ifdef DEBUG
     printf("Local Callback Queues\n");
@@ -43,6 +45,12 @@ Node::Node(NodeId_t name, NodeList peers, NodeList children, NodeId_t parent,
   children_ = children;
   parent_   = parent;
 
+  state_.owner.type = 1;
+  state_.owner.robot = 3;
+  state_.owner.node = 256;
+  state_.active = false;
+  state_.done = false;
+
   // Get bitmask
   mask_ = GetBitmask(name_);
   // Setup Publisher/subscribers
@@ -50,6 +58,8 @@ Node::Node(NodeId_t name, NodeList peers, NodeList children, NodeId_t parent,
   InitializePublishers(children_, &children_pub_list_);
   InitializePublishers(peers_, &peer_pub_list_);
   InitializePublisher(parent_, &parent_pub_);
+  InitializePublisher(name_, &self_pub_);
+  NodeInit(mtime);
 }
 
 Node::~Node() {}
@@ -57,17 +67,15 @@ Node::~Node() {}
 void Node::Activate() {
   if (!state_.active) {
     state_.active = true;
-    state_.owner = name_;
     printf("Activating Node: %s\n", name_.c_str());
   }
 }
 
 void Node::Deactivate() {
-  if (state_.active && state_.owner == name_.c_str()) {
-    state_.active = false;
-    state_.owner = "";
-    printf("Deactivating Node; %s\n", name_.c_str());
-  }
+  // if (state_.active && state_.owner == name_.c_str()) {
+  //   state_.active = false;
+  //   printf("Deactivating Node; %s\n", name_.c_str());
+  // }
 }
 
 void Node::ActivateNode(NodeId_t node) {}
@@ -99,23 +107,60 @@ void Node::SendToPeer(NodeId_t node, std_msgs::String message) {
 
 void Node::ReceiveFromParent(std_msgs::String message) {}
 void Node::ReceiveFromChildren(boost::shared_ptr<std_msgs::String const> msg) {}
-void Node::ReceiveFromPeers(boost::shared_ptr<std_msgs::String const> msg) {}
+void Node::ReceiveFromPeers(const std_msgs::StringConstPtr & msg) {
+  printf("%s\n", msg->data.c_str());
+}
+
+
+// Main Loop of Update Thread. spins once every mtime milliseconds
+void UpdateThread(Node *node, boost::posix_time::millisec mtime) {
+  while (true) {
+    node->Update();
+    boost::this_thread::sleep(mtime);
+  }
+}
+
+// Initialize node threads and variables
+void Node::NodeInit(boost::posix_time::millisec mtime) {
+  // Initialize node threads
+  update_thread = new boost::thread(&UpdateThread, this, mtime);
+}
 
 // Main Loop of the Node type Each Node Will have this fucnction called at each
 // times step to process node properties. Each node should run in its own thread
 void Node::Update() {
-  std::string hello = "hello";
-  std_msgs::String msg;
-  msg.data = hello;
-  parent_pub_.publish(msg);
+  // std::string hello = "node thread: " + name_;
+  // std_msgs::StringPtr msg(new std_msgs::String);
+  // msg->data = hello;
+  // parent_pub_.publish(msg);
+
+  // Publish Status
+  PublishStatus();
+  // Check Preconditions
+  if (Precondition()) {
+    // Print temp
+    printf("Precondition Satisfied\n");
+  }
 }
-void Node::NodeInit() {
-  // Initialize node threads
-}  // Iinti shouwl intialize the nodes threads. Main function should only be
-  //  used to setup callbackqueues and spinners
+
+std::string StateToString(State state) {
+  char temp[STATE_MSG_LEN];
+  memcpy(&state, temp, sizeof(State));
+  temp[STATE_MSG_LEN-1] = '\0';
+  std::string str = temp;
+  return str;
+}
+void Node::PublishStatus() {
+  std_msgs::StringPtr msg(new std_msgs::String);
+  msg->data = StateToString(state_);
+  self_pub_.publish(msg);
+  printf("Publish Status: %s\n", msg->data.c_str());
+}
 uint32_t Node::IsDone() {}
 float Node::ActivationLevel() {}
-bool Node::Precondition() {}
+bool Node::Precondition() {
+  return false;
+}
 uint32_t Node::SpreadActivation() {}
 void Node::InitializeSubscriber(NodeId_t topic) {
   std::string peer_topic = topic + "_peers";

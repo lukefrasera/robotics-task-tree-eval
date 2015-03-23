@@ -52,19 +52,8 @@ int main(int argc, char *argv[]) {
                             peers_param,
                             children_param,
                             parent_param,
-                            true);
-
-  // Start publisher thread
-  boost::posix_time::millisec mtime(1000);
-  boost::thread node_publisher(PubFunction, test, mtime);
+                            false);
   ros::spin();
   delete test;
   return 0;
-}
-
-void PubFunction(task_net::Node *node, boost::posix_time::millisec mtime) {
-  while (true) {
-    node->Update();
-    boost::this_thread::sleep(mtime);
-  }
 }
