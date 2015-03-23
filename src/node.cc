@@ -46,10 +46,11 @@ Node::Node(NodeId_t name, NodeList peers, NodeList children, NodeId_t parent,
   parent_   = parent;
 
   state_.owner.type = 1;
-  state_.owner.robot = 3;
-  state_.owner.node = 256;
-  state_.active = false;
-  state_.done = false;
+  state_.owner.robot = 0;
+  state_.owner.node = 0;
+  state_.active = true;
+  state_.done = true;
+  state_.activation_level = 0.0f;
 
   // Get bitmask
   mask_ = GetBitmask(name_);
@@ -149,23 +150,29 @@ void Node::Update() {
 }
 
 std::string StateToString(State state) {
-  char temp[STATE_MSG_LEN];
-  uint8_t * temp2 = (uint8_t*)&state;
-  for (int i = 0; i < STATE_MSG_LEN; ++i) {
-    printf("|%d| ", temp2[i]);
-  }
-  memcpy(&state, temp, sizeof(State));
-  std::string str = temp;
+  char buffer[sizeof(State)*8];
+  snprintf(buffer, sizeof(buffer), "Owner:%u, Actvie:%d, Done:%d, Level:%f",
+    *reinterpret_cast<uint32_t*>(&state),
+    *(reinterpret_cast<uint8_t*>(&state)+sizeof(NodeBitmask)),
+    *(reinterpret_cast<uint8_t*>(&state)+sizeof(NodeBitmask)+sizeof(bool)),
+    *(reinterpret_cast<float*>(&state)+sizeof(NodeBitmask)+sizeof(bool)*2));
+  std::string str = buffer;
   return str;
 }
+
 void Node::PublishStatus() {
   std_msgs::StringPtr msg(new std_msgs::String);
   msg->data = StateToString(state_);
   self_pub_.publish(msg);
   printf("Publish Status: %s\n", msg->data.c_str());
 }
-uint32_t Node::IsDone() {}
-uint32_t Node::IsActive() {}
+
+bool Node::IsDone() {
+  return state_.done;
+}
+bool Node::IsActive() {
+  return state_.active;
+}
 float Node::ActivationLevel() {}
 bool Node::Precondition() {
   return false;

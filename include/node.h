@@ -38,6 +38,7 @@ struct State {
   NodeBitmask owner;  // If owener is null node is inactive
   bool active;
   bool done;
+  float activation_level;
 };
 
 typedef std::vector<NodeId_t> NodeList;
@@ -79,8 +80,8 @@ class Node {
   virtual void ReceiveFromPeers(const std_msgs::StringConstPtr & msg);
 
   // Main Node loop functions
-  virtual uint32_t IsDone();
-  virtual uint32_t IsActive();
+  virtual bool IsDone();
+  virtual bool IsActive();
   virtual float ActivationLevel();
   virtual bool Precondition();
   virtual uint32_t SpreadActivation();
