@@ -54,7 +54,7 @@ class Node {
   Node();
   Node(NodeId_t name, NodeList peers, NodeList children, NodeId_t parent,
     bool use_local_callback_queue = false,
-    boost::posix_time::millisec mtime=boost::posix_time::millisec(1000));
+    boost::posix_time::millisec mtime = boost::posix_time::millisec(1000));
   virtual ~Node();
 
   virtual void Update();
@@ -79,8 +79,8 @@ class Node {
   virtual void ReceiveFromPeers(const std_msgs::StringConstPtr & msg);
 
   // Main Node loop functions
-  virtual void NodeInit(boost::posix_time::millisec mtime);
   virtual uint32_t IsDone();
+  virtual uint32_t IsActive();
   virtual float ActivationLevel();
   virtual bool Precondition();
   virtual uint32_t SpreadActivation();
@@ -91,6 +91,7 @@ class Node {
   ros::CallbackQueue *sub_callback_queue_;
 
  private:
+  virtual void NodeInit(boost::posix_time::millisec mtime);
   virtual void PublishStatus();
   virtual void InitializeSubscriber(NodeId_t topic);
   virtual void InitializePublishers(NodeList topics, PubList *pub);

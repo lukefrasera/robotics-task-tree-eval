@@ -23,7 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace task_net {
 
 #define PUB_SUB_QUEUE_SIZE 100
-#define STATE_MSG_LEN (sizeof(State)+1)
+#define STATE_MSG_LEN (sizeof(State))
 
 Node::Node() {
   state_.active = false;
@@ -65,10 +65,10 @@ Node::Node(NodeId_t name, NodeList peers, NodeList children, NodeId_t parent,
 Node::~Node() {}
 
 void Node::Activate() {
-  if (!state_.active) {
-    state_.active = true;
-    printf("Activating Node: %s\n", name_.c_str());
-  }
+  // if (!state_.active) {
+  //   state_.active = true;
+  //   printf("Activating Node: %s\n", name_.c_str());
+  // }
 }
 
 void Node::Deactivate() {
@@ -129,24 +129,32 @@ void Node::NodeInit(boost::posix_time::millisec mtime) {
 // Main Loop of the Node type Each Node Will have this fucnction called at each
 // times step to process node properties. Each node should run in its own thread
 void Node::Update() {
-  // std::string hello = "node thread: " + name_;
-  // std_msgs::StringPtr msg(new std_msgs::String);
-  // msg->data = hello;
-  // parent_pub_.publish(msg);
-
+  // Check if Done
+  if (!IsDone()) {
+    // Check Activation Level
+    if (IsActive()) {
+      // Check Preconditions
+      if (Precondition()) {
+        // Print temp
+        printf("Preconditions Satisfied Safe To Do Work!\n");
+      } else {
+        printf("Preconditions Not Satisfied, Spreading Activation!\n");
+        SpreadActivation();
+      }
+      // Do Work
+    }
+  }
   // Publish Status
   PublishStatus();
-  // Check Preconditions
-  if (Precondition()) {
-    // Print temp
-    printf("Precondition Satisfied\n");
-  }
 }
 
 std::string StateToString(State state) {
   char temp[STATE_MSG_LEN];
+  uint8_t * temp2 = (uint8_t*)&state;
+  for (int i = 0; i < STATE_MSG_LEN; ++i) {
+    printf("|%d| ", temp2[i]);
+  }
   memcpy(&state, temp, sizeof(State));
-  temp[STATE_MSG_LEN-1] = '\0';
   std::string str = temp;
   return str;
 }
@@ -157,6 +165,7 @@ void Node::PublishStatus() {
   printf("Publish Status: %s\n", msg->data.c_str());
 }
 uint32_t Node::IsDone() {}
+uint32_t Node::IsActive() {}
 float Node::ActivationLevel() {}
 bool Node::Precondition() {
   return false;
