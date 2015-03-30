@@ -23,26 +23,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <std_msgs/String.h>
 #include <vector>
 #include <string>
+#include "include/node_types.h"
 namespace task_net {
-
-
-typedef std::string NodeId_t;
-
-struct NodeBitmask {
-  uint8_t type;
-  uint8_t robot;
-  uint16_t node;
-};
-
-struct State {
-  NodeBitmask owner;  // If owener is null node is inactive
-  bool active;
-  bool done;
-  float activation_level;
-};
-
-typedef std::vector<NodeId_t> NodeList;
-typedef std::vector<ros::Publisher> PubList;
 
 /*
 Class: Node
