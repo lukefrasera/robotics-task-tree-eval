@@ -36,3 +36,4 @@ struct State {
 
 typedef std::vector<NodeId_t> NodeList;
 typedef std::vector<ros::Publisher> PubList;
+typedef State State_t;

@@ -45,7 +45,7 @@ class Node {
  protected:
   virtual void Activate();
   virtual void Deactivate();
-  virtual void ActivateNode(NodeId_t node);
+  virtual void ActivateNode(nodeid_t node);
   virtual void DeactivateNode(NodeId_t node);
   virtual void Finish();
   virtual State GetState();
