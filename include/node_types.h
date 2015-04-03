@@ -19,6 +19,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include <vector>
 
+
+namespace task_net {
 typedef std::string NodeId_t;
 
 struct NodeBitmask {
@@ -37,3 +39,4 @@ struct State {
 typedef std::vector<NodeId_t> NodeList;
 typedef std::vector<ros::Publisher> PubList;
 typedef State State_t;
+}  // namespace task_net

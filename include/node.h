@@ -23,7 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <std_msgs/String.h>
 #include <vector>
 #include <string>
-#include "include/node_types.h"
+#include "node_types.h"
 namespace task_net {
 
 /*
