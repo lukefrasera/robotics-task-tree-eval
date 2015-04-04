@@ -15,10 +15,14 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+#ifndef NODE_TYPES_H_
+#define NODE_TYPES_H_
+
+#include <ros/message_traits.h>
+#include <ros/serialization.h>
 #include <stdint.h>
 #include <string>
 #include <vector>
-
 
 namespace task_net {
 typedef std::string NodeId_t;
@@ -39,4 +43,56 @@ struct State {
 typedef std::vector<NodeId_t> NodeList;
 typedef std::vector<ros::Publisher> PubList;
 typedef State State_t;
+
+/*// State messages ros
+ROS_STATIC_ASSERT(sizeof(State) == sizeof(State_t));
+
+namespace ros {
+namespace message_traits {
+template<>
+struct IsFixedSize<State> : public TrueType {};
+template<>
+struct IsSimple<State> : public TrueType {};
+
+template<>
+struct MD5Sum<State> {
+  static const  char* value() {
+    return "b1726aca0cd47f1e0dcb08bbf896cf72";
+  }
+
+  static const char* value(const State& m) {return value();}
+};
+
+template <>
+struct DataType<State> {
+  static const char* value() {
+    return 0;
+  }
+
+  static const char* value(const State& m) {return value();}
+};
+
+template<>
+struct Definition<State> {
+  static const char* value() {
+    return 0;
+  }
+  static const char* value(const State& m) {return value();}
+};
+}  // namespace message_traits
+
+namespace serialization {
+template <>
+struct Serialization<State> {
+  template<typename Stream, typename T>
+  inline static void allInOne(Steam& stream, T t) {
+    stream.next(t.owner);
+    stream.next(t.active);
+    stream.next(t.done);
+    stream.next(t.activation_level);
+  }
+};
+}  // namespace serialization
+}  // namespace ros*/
 }  // namespace task_net
+#endif

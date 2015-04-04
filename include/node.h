@@ -24,6 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 #include <string>
 #include "node_types.h"
+
 namespace task_net {
 
 /*
@@ -45,7 +46,7 @@ class Node {
  protected:
   virtual void Activate();
   virtual void Deactivate();
-  virtual void ActivateNode(nodeid_t node);
+  virtual void ActivateNode(NodeId_t node);
   virtual void DeactivateNode(NodeId_t node);
   virtual void Finish();
   virtual State GetState();
