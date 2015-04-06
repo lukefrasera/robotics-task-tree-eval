@@ -1,0 +1,3 @@
+NodeBitmask sender
+float32 activation_level
+bool done
