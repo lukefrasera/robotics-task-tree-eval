@@ -19,14 +19,23 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <ros/ros.h>
 #include <boost/thread/thread.hpp>
 #include <boost/date_time.hpp>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/classification.hpp>
+#include <signal.h>
 #include <vector>
 #include <string>
+#include <map>
 #include "../include/node.h"
+#include "node_types.h"
 
-void PubFunction(task_net::Node *node, boost::posix_time::millisec mtime);
+void EndingFunc(int signal) {
+  printf("Closing Program...\n");
+  exit(0);
+}
 
 int main(int argc, char *argv[]) {
-  ros::init(argc, argv, "behavior_network");
+  ros::init(argc, argv, "behavior_network", ros::init_options::NoSigintHandler);
+  signal(SIGINT, EndingFunc);
   ros::NodeHandle nh("~");
 
   std::string name_param;

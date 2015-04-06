@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(robotics-task-tree-eval)
+project(robotics_task_tree_eval)
 
 
 ## Find catkin macros and libraries
@@ -58,6 +58,7 @@ add_message_files(
   FILES
   State.msg
   NodeBitmask.msg
+  ControlMessage.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -116,10 +117,10 @@ include_directories(
 ## Declare a cpp executable
 # add_executable(robotics-task-tree-eval_node src/robotics-task-tree-eval_node.cpp)
 
-add_executable(robotics-task-tree-eval  
+add_executable(robotics_task_tree_eval  
   src/behavior_network.cc
   src/node.cc)
-target_link_libraries(robotics-task-tree-eval
+target_link_libraries(robotics_task_tree_eval
   ${catkin_LIBRARIES}
 )
 

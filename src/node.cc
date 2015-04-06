@@ -18,8 +18,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "../include/node.h"
 #include <boost/thread/thread.hpp>
 #include <boost/date_time.hpp>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/classification.hpp>
+#include <stdlib.h>
 #include <string>
 #include <vector>
+#include "robotics_task_tree_eval/State.h"
+
 namespace task_net {
 
 #define PUB_SUB_QUEUE_SIZE 100
@@ -54,17 +59,29 @@ Node::Node(NodeId_t name, NodeList peers, NodeList children, NodeId_t parent,
 
   // Get bitmask
   mask_ = GetBitmask(name_);
+  // Generate reverse map
+  // GenerateNodeBitmaskMap();
   // Setup Publisher/subscribers
   InitializeSubscriber(name_);
   InitializePublishers(children_, &children_pub_list_);
   InitializePublishers(peers_, &peer_pub_list_);
   InitializePublisher(parent_, &parent_pub_);
-  InitializePublisher(name_, &self_pub_);
+  InitializeStatePublisher(name_, &self_pub_);
   NodeInit(mtime);
 }
 
 Node::~Node() {}
 
+// void Node::GenerateNodeBitmaskMap() {
+//   std::vector<std::string> nodes;
+//   if (pub_nh_.getParam("Nodes", nodes)) {
+//     printf("Generating BitmaskMap\n");
+//     for (std::vector<std::string>::iterator it = nodes.begin();
+//       it != nodes.end(); ++it) {
+//       node_dict_[GetBitmask(*it)] = *it;
+//     }
+//   }
+// }
 void Node::Activate() {
   // if (!state_.active) {
   //   state_.active = true;
@@ -92,25 +109,37 @@ State Node::GetState() {
   return state_;
 }
 
-void Node::SendToParent(std_msgs::String message) {
-  parent_pub_.publish(message);
+void Node::SendToParent(const robotics_task_tree_eval::ControlMessage msg) {
+  ControlMessagePtr msg_temp(new robotics_task_tree_eval::ControlMessage);
+  *msg_temp = msg;
+  parent_pub_.publish(msg_temp);
 }
-void Node::SendToChild(NodeBitmask node, std_msgs::String message) {
+void Node::SendToChild(NodeBitmask node,
+  const robotics_task_tree_eval::ControlMessage msg) {
   // get publisher for specific node
-
+  ros::Publisher* pub = &node_dict_[node];
   // publish message to the specific child
+  ControlMessagePtr msg_temp(new robotics_task_tree_eval::ControlMessage);
+  *msg_temp = msg;
+  pub->publish(msg_temp);
 }
-void Node::SendToPeer(NodeId_t node, std_msgs::String message) {
+void Node::SendToPeer(NodeBitmask node,
+  const robotics_task_tree_eval::ControlMessage msg) {
   // get publisher for specific node
-
-  // publish to peer
+  ros::Publisher* pub = &node_dict_[node];
+  // publish message to the specific child
+  ControlMessagePtr msg_temp(new robotics_task_tree_eval::ControlMessage);
+  *msg_temp = msg;
+  pub->publish(msg_temp);
 }
 
-void Node::ReceiveFromParent(std_msgs::String message) {}
-void Node::ReceiveFromChildren(boost::shared_ptr<std_msgs::String const> msg) {}
-void Node::ReceiveFromPeers(const std_msgs::StringConstPtr & msg) {
-  printf("%s\n", msg->data.c_str());
+void Node::ReceiveFromParent(ConstControlMessagePtr msg) {
+  // Set activation level from parent
+  // TODO(Luke Fraser) Use mutex to avoid race condition
+  state_.activation_level = msg->activation_level;
 }
+void Node::ReceiveFromChildren(ConstControlMessagePtr msg) {}
+void Node::ReceiveFromPeers(ConstControlMessagePtr msg) {}
 
 
 // Main Loop of Update Thread. spins once every mtime milliseconds
@@ -149,6 +178,7 @@ void Node::Update() {
   PublishStatus();
 }
 
+// Deprecated function. use ros message data type with struct generality.
 std::string StateToString(State state) {
   char buffer[sizeof(State)*8];
   snprintf(buffer, sizeof(buffer), "Owner:%u, Actvie:%d, Done:%d, Level:%f",
@@ -161,10 +191,10 @@ std::string StateToString(State state) {
 }
 
 void Node::PublishStatus() {
-  std_msgs::StringPtr msg(new std_msgs::String);
-  msg->data = StateToString(state_);
+  boost::shared_ptr<State_t> msg(new State_t);
+  *msg = state_;
   self_pub_.publish(msg);
-  printf("Publish Status: %s\n", msg->data.c_str());
+  // printf("Publish Status: %s\n", msg->data.c_str());
 }
 
 bool Node::IsDone() {
@@ -200,10 +230,12 @@ void Node::InitializePublishers(NodeList topics, PubList *pub) {
   for (std::vector<NodeId_t>::iterator it = topics.begin();
     it != topics.end();
     ++it) {
-    ros::Publisher topic = pub_nh_.advertise<std_msgs::String>(*it,
-      PUB_SUB_QUEUE_SIZE);
+    ros::Publisher topic =
+      pub_nh_.advertise<robotics_task_tree_eval::ControlMessage>(*it,
+        PUB_SUB_QUEUE_SIZE);
 
     pub->push_back(topic);
+    node_dict_[GetBitmask(*it)] = topic;
 #if DEBUG
     printf("[PUBLISHER] - Creating Topic: %s\n", it->c_str());
 #endif
@@ -214,11 +246,47 @@ void Node::InitializePublisher(NodeId_t topic, ros::Publisher *pub) {
 #ifdef DEBUG
   printf("[PUBLISHER] - Creating Topic: %s\n", topic.c_str());
 #endif
-  (*pub) = pub_nh_.advertise<std_msgs::String>(topic, PUB_SUB_QUEUE_SIZE);
+  (*pub) =
+    pub_nh_.advertise<robotics_task_tree_eval::ControlMessage>(topic,
+      PUB_SUB_QUEUE_SIZE);
+  node_dict_[GetBitmask(topic)] = *pub;
 }
 
-NodeBitmask Node::GetBitmask(NodeId_t name) {}
-NodeId_t Node::GetNodeId(NodeBitmask id) {}
+void Node::InitializeStatePublisher(NodeId_t topic, ros::Publisher *pub) {
+#ifdef DEBUG
+  printf("[PUBLISHER] - Creating Topic: %s\n", topic.c_str());
+#endif
+  (*pub) = pub_nh_.advertise<robotics_task_tree_eval::State>(topic,
+    PUB_SUB_QUEUE_SIZE);
+  node_dict_[GetBitmask(topic)] = *pub;
+}
+
+NodeBitmask Node::GetBitmask(NodeId_t name) {
+  // Split underscores
+  std::vector<std::string> split_vec;
+  boost::algorithm::split(split_vec, name,
+    boost::algorithm::is_any_of("_"));
+  NodeBitmask mask;
+  // node_type
+  mask.type  = static_cast<uint8_t>(atoi(split_vec[1].c_str()));
+  mask.robot = static_cast<uint8_t>(atoi(split_vec[2].c_str()));
+  mask.node  = static_cast<uint16_t>(atoi(split_vec[3].c_str()));
+  return mask;
+}
+NodeId_t Node::GetNodeId(NodeBitmask id) {
+  NodeId_t nid;
+  char buffer[50];
+  nid = name_id_;
+  nid += "_";
+  snprintf(buffer, sizeof(buffer), "%d", id.type);
+  nid += buffer;
+  nid += "_";
+  snprintf(buffer, sizeof(buffer), "%d", id.robot);
+  nid += "_";
+  snprintf(buffer, sizeof(buffer), "%d", id.node);
+  nid += buffer;
+  return nid;
+}
 
 ros::CallbackQueue* Node::GetPubCallbackQueue() {
   return pub_callback_queue_;

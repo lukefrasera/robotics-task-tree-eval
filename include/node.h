@@ -23,10 +23,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <std_msgs/String.h>
 #include <vector>
 #include <string>
+#include <map>
 #include "node_types.h"
+#include "robotics_task_tree_eval/ControlMessage.h"
 
 namespace task_net {
 
+typedef boost::shared_ptr<robotics_task_tree_eval::ControlMessage const>
+  ConstControlMessagePtr;
+typedef boost::shared_ptr<robotics_task_tree_eval::ControlMessage>
+  ControlMessagePtr;
 /*
 Class: Node
 Definition: Base class for behavior network nodes. All nodes will inherit from
@@ -52,15 +58,17 @@ class Node {
   virtual State GetState();
 
   // Messaging
-  virtual void SendToParent(std_msgs::String message);
-  virtual void SendToChild(NodeBitmask node, std_msgs::String message);
-  virtual void SendToPeer(NodeId_t node, std_msgs::String message);
+  virtual void SendToParent(
+    const robotics_task_tree_eval::ControlMessage msg);
+  virtual void SendToChild(NodeBitmask node,
+    const robotics_task_tree_eval::ControlMessage msg);
+  virtual void SendToPeer(NodeBitmask node,
+    const robotics_task_tree_eval::ControlMessage msg);
 
   // Receiving Threads
-  virtual void ReceiveFromParent(std_msgs::String message);
-  virtual void ReceiveFromChildren(
-    boost::shared_ptr<std_msgs::String const> msg);
-  virtual void ReceiveFromPeers(const std_msgs::StringConstPtr & msg);
+  virtual void ReceiveFromParent(ConstControlMessagePtr msg);
+  virtual void ReceiveFromChildren(ConstControlMessagePtr msg);
+  virtual void ReceiveFromPeers(ConstControlMessagePtr msg);
 
   // Main Node loop functions
   virtual bool IsDone();
@@ -80,11 +88,15 @@ class Node {
   virtual void InitializeSubscriber(NodeId_t topic);
   virtual void InitializePublishers(NodeList topics, PubList *pub);
   virtual void InitializePublisher(NodeId_t topic, ros::Publisher *pub);
+  virtual void InitializeStatePublisher(NodeId_t topic, ros::Publisher *pub);
   virtual NodeBitmask GetBitmask(NodeId_t name);
   virtual NodeId_t GetNodeId(NodeBitmask id);
+  // virtual void GenerateNodeBitmaskMap();
 
   State state_;
   NodeId_t name_;
+  std::map<NodeBitmask, ros::Publisher, BitmaskLessThan> node_dict_;
+  std::string name_id_;
   NodeBitmask mask_;
   NodeList peers_;
   NodeList children_;

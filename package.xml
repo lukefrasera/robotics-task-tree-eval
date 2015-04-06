@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>robotics-task-tree-eval</name>
+  <name>robotics_task_tree_eval</name>
   <version>0.0.1</version>
-  <description>The robotics-task-tree-eval package</description>
+  <description>The robotics_task_tree_eval package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
   <!-- Example:  -->

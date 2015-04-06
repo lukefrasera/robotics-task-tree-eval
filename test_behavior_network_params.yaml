@@ -1,4 +1,4 @@
-name: "test_node"
-peers: ['peer_1', 'peer_2']
-children: ['child_1', 'child_2', 'child_3']
-parent: "test_parent"
+name: "test_0_0_000"
+peers: ['peer_0_0_001', 'peer_0_0_002']
+children: ['child_0_0_003', 'child_0_0_004', 'child_0_0_005']
+parent: "test_0_0_006"
