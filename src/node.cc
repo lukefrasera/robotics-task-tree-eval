@@ -52,14 +52,22 @@ Node::Node(NodeId_t name, NodeList peers, NodeList children, NodeId_t parent,
   children_ = children;
   parent_   = parent;
 
+  // Setup bitmasks
+  InitializeBitmask(&name_);
+  InitializeBitmasks(&peers_);
+  InitializeBitmasks(&children_);
+  InitializeBitmask(&parent_);
+
   state_ = state;
   state_.active = false;
   state_.done = false;
+  state_.activation_level = 0.2f;
 
   // Get bitmask
-  mask_ = GetBitmask(name_);
+  printf("name: %s\n", name_.topic.c_str());
+  mask_ = GetBitmask(name_.topic);
   // Generate reverse map
-  // GenerateNodeBitmaskMap();
+  GenerateNodeBitmaskMap();
   // Setup Publisher/subscribers
   InitializeSubscriber(name_);
   InitializePublishers(children_, &children_pub_list_);
@@ -71,16 +79,32 @@ Node::Node(NodeId_t name, NodeList peers, NodeList children, NodeId_t parent,
 
 Node::~Node() {}
 
-// void Node::GenerateNodeBitmaskMap() {
-//   std::vector<std::string> nodes;
-//   if (pub_nh_.getParam("Nodes", nodes)) {
-//     printf("Generating BitmaskMap\n");
-//     for (std::vector<std::string>::iterator it = nodes.begin();
-//       it != nodes.end(); ++it) {
-//       node_dict_[GetBitmask(*it)] = *it;
-//     }
-//   }
-// }
+void Node::InitializeBitmask(NodeId_t * node) {
+  node->mask = GetBitmask(node->topic);
+}
+
+void Node::InitializeBitmasks(NodeList * nodes) {
+  for (std::vector<NodeId_t>::iterator it = nodes->begin(); it != nodes->end(); ++it) {
+    InitializeBitmask(&(*it));
+  }
+}
+
+void Node::GenerateNodeBitmaskMap() {
+  std::vector<std::string> nodes;
+  if (pub_nh_.getParam("Nodes", nodes)) {
+    printf("Generating BitmaskMap\n");
+    for (std::vector<std::string>::iterator it = nodes.begin();
+        it != nodes.end(); ++it) {
+      NodeId_t *nptr = new NodeId_t;
+      nptr->topic = *it;
+      nptr->mask = GetBitmask(*it);
+      nptr->pub = NULL;
+      nptr->state =  {nptr->mask, false, false, 0.0f};
+      node_dict_[nptr->mask] = nptr;
+      printf("Adding [%s] to Dictionary.\n", nptr->topic.c_str());
+    }
+  }
+}
 void Node::Activate() {
   // if (!state_.active) {
   //   state_.active = true;
@@ -116,7 +140,7 @@ void Node::SendToParent(const robotics_task_tree_eval::ControlMessage msg) {
 void Node::SendToChild(NodeBitmask node,
   const robotics_task_tree_eval::ControlMessage msg) {
   // get publisher for specific node
-  ros::Publisher* pub = node_dict_[node].pub;
+  ros::Publisher* pub = node_dict_[node]->pub;
   // publish message to the specific child
   ControlMessagePtr msg_temp(new robotics_task_tree_eval::ControlMessage);
   *msg_temp = msg;
@@ -125,29 +149,29 @@ void Node::SendToChild(NodeBitmask node,
 void Node::SendToPeer(NodeBitmask node,
   const robotics_task_tree_eval::ControlMessage msg) {
   // get publisher for specific node
-  ros::Publisher* pub = node_dict_[node].pub;
+  ros::Publisher* pub = node_dict_[node]->pub;
   // publish message to the specific child
   ControlMessagePtr msg_temp(new robotics_task_tree_eval::ControlMessage);
   *msg_temp = msg;
   pub->publish(msg_temp);
 }
 
-void Node::ReceiveFromParent(ConstControlMessagePtr msg) {
+void Node::ReceiveFromParent(ConstControlMessagePtr_t msg) {
   // Set activation level from parent
   // TODO(Luke Fraser) Use mutex to avoid race condition
   state_.activation_level = msg->activation_level;
+  printf("Activation Level: %f\n", msg->activation_level);
 }
-void Node::ReceiveFromChildren(ConstControlMessagePtr msg) {
+void Node::ReceiveFromChildren(ConstControlMessagePtr_t msg) {
   // Determine the child
-  NodeId_t child = node_dict_[msg->mask];
+  NodeId_t *child = node_dict_[msg->sender];
   // Store respective data to child buffer
   // TODO(Luke fraser) convert dictionary to pointers
 }
-void Node::ReceiveFromPeers(ConstControlMessagePtr msg) {
+void Node::ReceiveFromPeers(ConstControlMessagePtr_t msg) {
   state_.activation_level = msg->activation_level;
   state_.done = msg->done;
 }
-
 
 // Main Loop of Update Thread. spins once every mtime milliseconds
 void UpdateThread(Node *node, boost::posix_time::millisec mtime) {
@@ -212,7 +236,15 @@ float Node::ActivationLevel() {
   return state_.activation_level;
 }
 bool Node::Precondition() {
-
+  // TODO(Luke Fraser) Merge children/peer/name/parent lists to point to the same as dictionary
+  bool satisfied = true;
+  for (std::vector<NodeId_t>::iterator it = children_.begin();
+      it != children_.end(); ++it) {
+    satisfied = satisfied && node_dict_[it->mask]->state.done;
+  }
+  if (satisfied)
+    return true;
+  return false;
 }
 uint32_t Node::SpreadActivation() {}
 void Node::InitializeSubscriber(NodeId_t node) {
@@ -238,12 +270,12 @@ void Node::InitializePublishers(NodeList nodes, PubList *pub) {
     it != nodes.end();
     ++it) {
     ros::Publisher * topic = new ros::Publisher;
-    *topic = 
+    *topic =
       pub_nh_.advertise<robotics_task_tree_eval::ControlMessage>(it->topic,
         PUB_SUB_QUEUE_SIZE);
 
     pub->push_back(*topic);
-    node_dict_[it->mask].pub = topic;
+    node_dict_[it->mask]->pub = topic;
 #if DEBUG
     printf("[PUBLISHER] - Creating Topic: %s\n", it->topic.c_str());
 #endif
@@ -257,7 +289,7 @@ void Node::InitializePublisher(NodeId_t node, ros::Publisher *pub) {
   (*pub) =
     pub_nh_.advertise<robotics_task_tree_eval::ControlMessage>(node.topic,
       PUB_SUB_QUEUE_SIZE);
-  node_dict_[node.mask].pub = pub;
+  node_dict_[node.mask]->pub = pub;
 }
 
 void Node::InitializeStatePublisher(NodeId_t node, ros::Publisher *pub) {
@@ -266,13 +298,13 @@ void Node::InitializeStatePublisher(NodeId_t node, ros::Publisher *pub) {
 #endif
   (*pub) = pub_nh_.advertise<robotics_task_tree_eval::State>(node.topic,
     PUB_SUB_QUEUE_SIZE);
-  node_dict_[node.mask].pub = pub;
+  node_dict_[node.mask]->pub = pub;
 }
 
-NodeBitmask Node::GetBitmask(NodeId_t name) {
+NodeBitmask Node::GetBitmask(std::string name) {
   // Split underscores
   std::vector<std::string> split_vec;
-  boost::algorithm::split(split_vec, name.topic,
+  boost::algorithm::split(split_vec, name,
     boost::algorithm::is_any_of("_"));
   NodeBitmask mask;
   // node_type
@@ -282,7 +314,7 @@ NodeBitmask Node::GetBitmask(NodeId_t name) {
   return mask;
 }
 NodeId_t Node::GetNodeId(NodeBitmask id) {
-  return node_dict_[id];
+  return *node_dict_[id];
 }
 
 ros::CallbackQueue* Node::GetPubCallbackQueue() {

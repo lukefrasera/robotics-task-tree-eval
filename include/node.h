@@ -33,6 +33,8 @@ typedef boost::shared_ptr<robotics_task_tree_eval::ControlMessage const>
   ConstControlMessagePtr;
 typedef boost::shared_ptr<robotics_task_tree_eval::ControlMessage>
   ControlMessagePtr;
+typedef boost::shared_ptr<ControlMessage_t const>
+  ConstControlMessagePtr_t;
 /*
 Class: Node
 Definition: Base class for behavior network nodes. All nodes will inherit from
@@ -67,9 +69,9 @@ class Node {
     const robotics_task_tree_eval::ControlMessage msg);
 
   // Receiving Threads
-  virtual void ReceiveFromParent(ConstControlMessagePtr msg);
-  virtual void ReceiveFromChildren(ConstControlMessagePtr msg);
-  virtual void ReceiveFromPeers(ConstControlMessagePtr msg);
+  virtual void ReceiveFromParent(ConstControlMessagePtr_t msg);
+  virtual void ReceiveFromChildren(ConstControlMessagePtr_t msg);
+  virtual void ReceiveFromPeers(ConstControlMessagePtr_t msg);
 
   // Main Node loop functions
   virtual bool IsDone();
@@ -80,8 +82,8 @@ class Node {
   virtual ros::CallbackQueue* GetPubCallbackQueue();
   virtual ros::CallbackQueue* GetSubCallbackQueue();
 
-  ros::CallbackQueue *pub_callback_queue_;
-  ros::CallbackQueue *sub_callback_queue_;
+  ros::CallbackQueue* pub_callback_queue_;
+  ros::CallbackQueue* sub_callback_queue_;
 
  private:
   virtual void NodeInit(boost::posix_time::millisec mtime);
@@ -90,13 +92,15 @@ class Node {
   virtual void InitializePublishers(NodeList nodes, PubList *pub);
   virtual void InitializePublisher(NodeId_t node, ros::Publisher *pub);
   virtual void InitializeStatePublisher(NodeId_t node, ros::Publisher *pub);
-  virtual NodeBitmask GetBitmask(NodeId_t name);
+  virtual NodeBitmask GetBitmask(std::string name);
   virtual NodeId_t GetNodeId(NodeBitmask id);
-  // virtual void GenerateNodeBitmaskMap();
+  virtual void GenerateNodeBitmaskMap();
+  virtual void InitializeBitmask(NodeId_t* node);
+  virtual void InitializeBitmasks(NodeList* nodes);
 
   State state_;
   NodeId_t name_;
-  std::map<NodeBitmask, NodeId_t, BitmaskLessThan> node_dict_;
+  std::map<NodeBitmask, NodeId_t*, BitmaskLessThan> node_dict_;
   std::string name_id_;
   NodeBitmask mask_;
   NodeList peers_;
