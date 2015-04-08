@@ -25,7 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 #include <string>
 #include <map>
-#include "../include/node.h"
+#include "../include/behavior.h"
 #include "node_types.h"
 
 void EndingFunc(int signal) {
@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
 
   task_net::State_t state;
   task_net::Node * test;
-  test = new task_net::Node(name_param,
+  test = new task_net::ThenBehavior(name_param,
                             peers_param,
                             children_param,
                             parent_param,

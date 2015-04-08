@@ -119,7 +119,9 @@ include_directories(
 
 add_executable(robotics_task_tree_eval  
   src/behavior_network.cc
-  src/node.cc)
+  src/behavior.cc
+  src/node.cc
+)
 target_link_libraries(robotics_task_tree_eval
   ${catkin_LIBRARIES}
 )

@@ -84,7 +84,8 @@ void Node::InitializeBitmask(NodeId_t * node) {
 }
 
 void Node::InitializeBitmasks(NodeList * nodes) {
-  for (std::vector<NodeId_t>::iterator it = nodes->begin(); it != nodes->end(); ++it) {
+  for (std::vector<NodeId_t>::iterator it = nodes->begin();
+      it != nodes->end(); ++it) {
     InitializeBitmask(&(*it));
   }
 }
@@ -106,10 +107,20 @@ void Node::GenerateNodeBitmaskMap() {
   }
 }
 void Node::Activate() {
-  // if (!state_.active) {
-  //   state_.active = true;
-  //   printf("Activating Node: %s\n", name_.c_str());
-  // }
+  if (!state_.active) {
+    if (ActivationPrecondition()) {
+      printf("Activating Node: %s\n", name_.topic.c_str());
+      {
+        boost::lock_guard<boost::mutex> lock(work_mut);
+        state_.active = true;
+      }
+      cv.notify_one();
+    }
+  }
+}
+
+bool Node::ActivationPrecondition() {
+  return true;
 }
 
 void Node::Deactivate() {
@@ -165,6 +176,8 @@ void Node::ReceiveFromParent(ConstControlMessagePtr_t msg) {
 void Node::ReceiveFromChildren(ConstControlMessagePtr_t msg) {
   // Determine the child
   NodeId_t *child = node_dict_[msg->sender];
+  child->state.activation_level = msg->activation_level;
+  child->state.done = msg->done;
   // Store respective data to child buffer
   // TODO(Luke fraser) convert dictionary to pointers
 }
@@ -181,10 +194,21 @@ void UpdateThread(Node *node, boost::posix_time::millisec mtime) {
   }
 }
 
+void WorkThread(Node *node) {
+  boost::unique_lock<boost::mutex> lock(node->work_mut);
+  while (!node->state_.active) {
+    node->cv.wait(lock);
+  }
+  // Process Data
+  node->Work();
+  node->state_.active = false;
+  node->state_.done = true;
+}
 // Initialize node threads and variables
 void Node::NodeInit(boost::posix_time::millisec mtime) {
   // Initialize node threads
   update_thread = new boost::thread(&UpdateThread, this, mtime);
+  work_thread   = new boost::thread(&WorkThread, this);
 }
 
 // Main Loop of the Node type Each Node Will have this fucnction called at each
@@ -197,6 +221,7 @@ void Node::Update() {
       // Check Preconditions
       if (Precondition()) {
         printf("Preconditions Satisfied Safe To Do Work!\n");
+        Activate();
       } else {
         printf("Preconditions Not Satisfied, Spreading Activation!\n");
         SpreadActivation();
@@ -207,6 +232,11 @@ void Node::Update() {
   PublishStatus();
 }
 
+void Node::Work() {
+  printf("Doring Work\n");
+
+  printf("Done!\n");
+}
 // Deprecated function. use ros message data type with struct generality.
 std::string StateToString(State state) {
   char buffer[sizeof(State)*8];

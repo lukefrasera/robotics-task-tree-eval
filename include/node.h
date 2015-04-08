@@ -35,6 +35,10 @@ typedef boost::shared_ptr<robotics_task_tree_eval::ControlMessage>
   ControlMessagePtr;
 typedef boost::shared_ptr<ControlMessage_t const>
   ConstControlMessagePtr_t;
+
+// Pre-declare
+class Node;
+void WorkThread(Node* node);
 /*
 Class: Node
 Definition: Base class for behavior network nodes. All nodes will inherit from
@@ -51,6 +55,7 @@ class Node {
   virtual ~Node();
 
   virtual void Update();
+  virtual void Work();
 
  protected:
   virtual void Activate();
@@ -84,6 +89,7 @@ class Node {
 
   ros::CallbackQueue* pub_callback_queue_;
   ros::CallbackQueue* sub_callback_queue_;
+  friend void WorkThread(Node* node);
 
  private:
   virtual void NodeInit(boost::posix_time::millisec mtime);
@@ -97,6 +103,7 @@ class Node {
   virtual void GenerateNodeBitmaskMap();
   virtual void InitializeBitmask(NodeId_t* node);
   virtual void InitializeBitmasks(NodeList* nodes);
+  virtual bool ActivationPrecondition();
 
   State state_;
   NodeId_t name_;
@@ -123,6 +130,14 @@ class Node {
 
   // Threads
   boost::thread *update_thread;
+  boost::thread *work_thread;
+
+  // Mutex
+  boost::mutex mut;
+  boost::mutex work_mut;
+
+  // Conditional Variable
+  boost::condition_variable cv;
 };
 }  // namespace task_net
 #endif  // INCLUDE_NODE_H_

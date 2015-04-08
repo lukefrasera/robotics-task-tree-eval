@@ -15,36 +15,32 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef INCLUDE_BEHAVIOR_H_
-#define INCLUDE_BEHAVIOR_H_
+#include "../include/behavior.h"
 
-#include "node.h"
 namespace task_net {
-class Behavior: public Node {
- public:
-  Behavior();
-  Behavior(NodeId_t name, NodeList peers, NodeList children,
+// BEHAVIOR
+Behavior::Behavior() {}
+Behavior::Behavior(NodeId_t name, NodeList peers, NodeList children,
     NodeId_t parent,
     State_t state,
-    bool use_local_callback_queue = false,
-    boost::posix_time::millisec mtime = boost::posix_time::millisec(1000));
-  virtual ~Behavior();
+    bool use_local_callback_queue,
+    boost::posix_time::millisec mtime) : Node(name,
+      peers,
+      children,
+      parent,
+      state) {}
+Behavior::~Behavior() {}
 
- private:
-};
-
-class ThenBehavior: public Behavior {
- public:
-  ThenBehavior();
-  ThenBehavior(NodeId_t name, NodeList peers, NodeList children,
+// THEN BEHAVIOR
+ThenBehavior::ThenBehavior() {}
+ThenBehavior::ThenBehavior(NodeId_t name, NodeList peers, NodeList children,
     NodeId_t parent,
     State_t state,
-    bool use_local_callback_queue = false,
-    boost::posix_time::millisec mtime = boost::posix_time::millisec(1000));
-  virtual ~ThenBehavior();
-};
-class AndBehavior: public Behavior {};
-class OrBehavior: public Behavior {};
-class WhileBehavior: public Behavior {};
+    bool use_local_callback_queue,
+    boost::posix_time::millisec mtime) : Behavior(name,
+      peers,
+      children,
+      parent,
+      state) {}
+ThenBehavior::~ThenBehavior() {}
 }  // namespace task_net
-#endif  // INCLUDE_BEHAVIOR_H_
