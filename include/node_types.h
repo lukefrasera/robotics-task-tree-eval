@@ -28,13 +28,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "robotics_task_tree_eval/ControlMessage.h"
 
 namespace task_net {
-typedef std::string NodeId_t;
+
 
 struct NodeBitmask {
   uint8_t type;
   uint8_t robot;
   uint16_t node;
 };
+
 struct BitmaskLessThan {
   bool operator()(const NodeBitmask &l, const NodeBitmask &r) {
     return *reinterpret_cast<const uint32_t*>(&l) <
@@ -48,6 +49,15 @@ struct State {
   bool done;
   float activation_level;
 };
+typedef State State_t;
+struct NodeId {
+  std::string topic;
+  NodeBitmask mask;
+  ros::Publisher * pub;
+  State_t state;
+};
+typedef NodeId NodeId_t;
+
 
 struct ControlMessage {
   NodeBitmask sender;
@@ -57,7 +67,6 @@ struct ControlMessage {
 
 typedef std::vector<NodeId_t> NodeList;
 typedef std::vector<ros::Publisher> PubList;
-typedef State State_t;
 typedef ControlMessage ControlMessage_t;
 }  // namespace task_net
 

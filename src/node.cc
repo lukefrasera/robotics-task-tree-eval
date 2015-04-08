@@ -29,6 +29,7 @@ namespace task_net {
 
 #define PUB_SUB_QUEUE_SIZE 100
 #define STATE_MSG_LEN (sizeof(State))
+#define ACTIVATION_THESH 0.1
 
 Node::Node() {
   state_.active = false;
@@ -36,6 +37,7 @@ Node::Node() {
 }
 
 Node::Node(NodeId_t name, NodeList peers, NodeList children, NodeId_t parent,
+  State_t state,
   bool use_local_callback_queue, boost::posix_time::millisec mtime) {
   if (use_local_callback_queue) {
   #ifdef DEBUG
@@ -50,12 +52,9 @@ Node::Node(NodeId_t name, NodeList peers, NodeList children, NodeId_t parent,
   children_ = children;
   parent_   = parent;
 
-  state_.owner.type = 1;
-  state_.owner.robot = 0;
-  state_.owner.node = 0;
-  state_.active = true;
-  state_.done = true;
-  state_.activation_level = 0.0f;
+  state_ = state;
+  state_.active = false;
+  state_.done = false;
 
   // Get bitmask
   mask_ = GetBitmask(name_);
@@ -117,7 +116,7 @@ void Node::SendToParent(const robotics_task_tree_eval::ControlMessage msg) {
 void Node::SendToChild(NodeBitmask node,
   const robotics_task_tree_eval::ControlMessage msg) {
   // get publisher for specific node
-  ros::Publisher* pub = &node_dict_[node];
+  ros::Publisher* pub = node_dict_[node].pub;
   // publish message to the specific child
   ControlMessagePtr msg_temp(new robotics_task_tree_eval::ControlMessage);
   *msg_temp = msg;
@@ -126,7 +125,7 @@ void Node::SendToChild(NodeBitmask node,
 void Node::SendToPeer(NodeBitmask node,
   const robotics_task_tree_eval::ControlMessage msg) {
   // get publisher for specific node
-  ros::Publisher* pub = &node_dict_[node];
+  ros::Publisher* pub = node_dict_[node].pub;
   // publish message to the specific child
   ControlMessagePtr msg_temp(new robotics_task_tree_eval::ControlMessage);
   *msg_temp = msg;
@@ -138,8 +137,16 @@ void Node::ReceiveFromParent(ConstControlMessagePtr msg) {
   // TODO(Luke Fraser) Use mutex to avoid race condition
   state_.activation_level = msg->activation_level;
 }
-void Node::ReceiveFromChildren(ConstControlMessagePtr msg) {}
-void Node::ReceiveFromPeers(ConstControlMessagePtr msg) {}
+void Node::ReceiveFromChildren(ConstControlMessagePtr msg) {
+  // Determine the child
+  NodeId_t child = node_dict_[msg->mask];
+  // Store respective data to child buffer
+  // TODO(Luke fraser) convert dictionary to pointers
+}
+void Node::ReceiveFromPeers(ConstControlMessagePtr msg) {
+  state_.activation_level = msg->activation_level;
+  state_.done = msg->done;
+}
 
 
 // Main Loop of Update Thread. spins once every mtime milliseconds
@@ -165,13 +172,11 @@ void Node::Update() {
     if (IsActive()) {
       // Check Preconditions
       if (Precondition()) {
-        // Print temp
         printf("Preconditions Satisfied Safe To Do Work!\n");
       } else {
         printf("Preconditions Not Satisfied, Spreading Activation!\n");
         SpreadActivation();
       }
-      // Do Work
     }
   }
   // Publish Status
@@ -201,15 +206,17 @@ bool Node::IsDone() {
   return state_.done;
 }
 bool Node::IsActive() {
-  return state_.active;
+  return state_.activation_level > ACTIVATION_THESH;
 }
-float Node::ActivationLevel() {}
+float Node::ActivationLevel() {
+  return state_.activation_level;
+}
 bool Node::Precondition() {
-  return false;
+
 }
 uint32_t Node::SpreadActivation() {}
-void Node::InitializeSubscriber(NodeId_t topic) {
-  std::string peer_topic = topic + "_peers";
+void Node::InitializeSubscriber(NodeId_t node) {
+  std::string peer_topic = node.topic + "_peers";
 #ifdef DEBUG
   printf("[SUBSCRIBER] - Creating Peer Topic: %s\n", peer_topic.c_str());
 #endif
@@ -219,52 +226,53 @@ void Node::InitializeSubscriber(NodeId_t topic) {
     this);
 
 #ifdef DEBUG
-  printf("[SUBSCRIBER] - Creating Child Topic: %s\n", topic.c_str());
+  printf("[SUBSCRIBER] - Creating Child Topic: %s\n", node.topic.c_str());
 #endif
-  children_sub_ = sub_nh_.subscribe(topic,
+  children_sub_ = sub_nh_.subscribe(node.topic,
     PUB_SUB_QUEUE_SIZE,
     &Node::ReceiveFromChildren,
     this);
 }
-void Node::InitializePublishers(NodeList topics, PubList *pub) {
-  for (std::vector<NodeId_t>::iterator it = topics.begin();
-    it != topics.end();
+void Node::InitializePublishers(NodeList nodes, PubList *pub) {
+  for (std::vector<NodeId_t>::iterator it = nodes.begin();
+    it != nodes.end();
     ++it) {
-    ros::Publisher topic =
-      pub_nh_.advertise<robotics_task_tree_eval::ControlMessage>(*it,
+    ros::Publisher * topic = new ros::Publisher;
+    *topic = 
+      pub_nh_.advertise<robotics_task_tree_eval::ControlMessage>(it->topic,
         PUB_SUB_QUEUE_SIZE);
 
-    pub->push_back(topic);
-    node_dict_[GetBitmask(*it)] = topic;
+    pub->push_back(*topic);
+    node_dict_[it->mask].pub = topic;
 #if DEBUG
-    printf("[PUBLISHER] - Creating Topic: %s\n", it->c_str());
+    printf("[PUBLISHER] - Creating Topic: %s\n", it->topic.c_str());
 #endif
   }
 }
 
-void Node::InitializePublisher(NodeId_t topic, ros::Publisher *pub) {
+void Node::InitializePublisher(NodeId_t node, ros::Publisher *pub) {
 #ifdef DEBUG
-  printf("[PUBLISHER] - Creating Topic: %s\n", topic.c_str());
+  printf("[PUBLISHER] - Creating Topic: %s\n", node.topic.c_str());
 #endif
   (*pub) =
-    pub_nh_.advertise<robotics_task_tree_eval::ControlMessage>(topic,
+    pub_nh_.advertise<robotics_task_tree_eval::ControlMessage>(node.topic,
       PUB_SUB_QUEUE_SIZE);
-  node_dict_[GetBitmask(topic)] = *pub;
+  node_dict_[node.mask].pub = pub;
 }
 
-void Node::InitializeStatePublisher(NodeId_t topic, ros::Publisher *pub) {
+void Node::InitializeStatePublisher(NodeId_t node, ros::Publisher *pub) {
 #ifdef DEBUG
-  printf("[PUBLISHER] - Creating Topic: %s\n", topic.c_str());
+  printf("[PUBLISHER] - Creating Topic: %s\n", node.topic.c_str());
 #endif
-  (*pub) = pub_nh_.advertise<robotics_task_tree_eval::State>(topic,
+  (*pub) = pub_nh_.advertise<robotics_task_tree_eval::State>(node.topic,
     PUB_SUB_QUEUE_SIZE);
-  node_dict_[GetBitmask(topic)] = *pub;
+  node_dict_[node.mask].pub = pub;
 }
 
 NodeBitmask Node::GetBitmask(NodeId_t name) {
   // Split underscores
   std::vector<std::string> split_vec;
-  boost::algorithm::split(split_vec, name,
+  boost::algorithm::split(split_vec, name.topic,
     boost::algorithm::is_any_of("_"));
   NodeBitmask mask;
   // node_type
@@ -274,18 +282,7 @@ NodeBitmask Node::GetBitmask(NodeId_t name) {
   return mask;
 }
 NodeId_t Node::GetNodeId(NodeBitmask id) {
-  NodeId_t nid;
-  char buffer[50];
-  nid = name_id_;
-  nid += "_";
-  snprintf(buffer, sizeof(buffer), "%d", id.type);
-  nid += buffer;
-  nid += "_";
-  snprintf(buffer, sizeof(buffer), "%d", id.robot);
-  nid += "_";
-  snprintf(buffer, sizeof(buffer), "%d", id.node);
-  nid += buffer;
-  return nid;
+  return node_dict_[id];
 }
 
 ros::CallbackQueue* Node::GetPubCallbackQueue() {

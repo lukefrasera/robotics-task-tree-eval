@@ -43,6 +43,7 @@ class Node {
  public:
   Node();
   Node(NodeId_t name, NodeList peers, NodeList children, NodeId_t parent,
+    State_t state,
     bool use_local_callback_queue = false,
     boost::posix_time::millisec mtime = boost::posix_time::millisec(1000));
   virtual ~Node();
@@ -85,17 +86,17 @@ class Node {
  private:
   virtual void NodeInit(boost::posix_time::millisec mtime);
   virtual void PublishStatus();
-  virtual void InitializeSubscriber(NodeId_t topic);
-  virtual void InitializePublishers(NodeList topics, PubList *pub);
-  virtual void InitializePublisher(NodeId_t topic, ros::Publisher *pub);
-  virtual void InitializeStatePublisher(NodeId_t topic, ros::Publisher *pub);
+  virtual void InitializeSubscriber(NodeId_t node);
+  virtual void InitializePublishers(NodeList nodes, PubList *pub);
+  virtual void InitializePublisher(NodeId_t node, ros::Publisher *pub);
+  virtual void InitializeStatePublisher(NodeId_t node, ros::Publisher *pub);
   virtual NodeBitmask GetBitmask(NodeId_t name);
   virtual NodeId_t GetNodeId(NodeBitmask id);
   // virtual void GenerateNodeBitmaskMap();
 
   State state_;
   NodeId_t name_;
-  std::map<NodeBitmask, ros::Publisher, BitmaskLessThan> node_dict_;
+  std::map<NodeBitmask, NodeId_t, BitmaskLessThan> node_dict_;
   std::string name_id_;
   NodeBitmask mask_;
   NodeList peers_;

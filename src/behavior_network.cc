@@ -30,7 +30,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 void EndingFunc(int signal) {
   printf("Closing Program...\n");
-  exit(0);
+  ros::shutdown();
 }
 
 int main(int argc, char *argv[]) {
@@ -38,29 +38,47 @@ int main(int argc, char *argv[]) {
   signal(SIGINT, EndingFunc);
   ros::NodeHandle nh("~");
 
-  std::string name_param;
-  std::vector<std::string> peers_param;
-  std::vector<std::string> children_param;
-  std::string parent_param;
+  task_net::NodeId_t name_param;
+  std::vector<std::string> peers_param_str;
+  task_net::NodeList peers_param;
+  std::vector<std::string> children_param_str;
+  task_net::NodeList children_param;
+  task_net::NodeId_t parent_param;
 
-  if (nh.getParam("name", name_param)) {
-    printf("%s\n", name_param.c_str());
+  if (nh.getParam("name", name_param.topic)) {
+    printf("%s\n", name_param.topic.c_str());
   }
-  if (nh.getParam("peers", peers_param)) {
-    printf("%s\n", peers_param[0].c_str());
+  if (nh.getParam("peers", peers_param_str)) {
+    printf("%s\n", peers_param_str[0].c_str());
   }
-  if (nh.getParam("children", children_param)) {
-    printf("%s\n", children_param[0].c_str());
+  for (std::vector<std::string>::iterator it = peers_param_str.begin();
+      it != peers_param_str.end(); ++it) {
+    task_net::NodeId_t temp;
+    temp.topic = *it;
+    temp.pub = NULL;
+    peers_param.push_back(temp);
   }
-  if (nh.getParam("parent", parent_param)) {
-    printf("%s\n", parent_param.c_str());
+  if (nh.getParam("children", children_param_str)) {
+    printf("%s\n", children_param_str[0].c_str());
+  }
+  for (std::vector<std::string>::iterator it = children_param_str.begin();
+      it != children_param_str.end(); ++it) {
+    task_net::NodeId_t temp;
+    temp.topic = *it;
+    temp.pub = NULL;
+    children_param.push_back(temp);
+  }
+  if (nh.getParam("parent", parent_param.topic)) {
+    printf("%s\n", parent_param.topic.c_str());
   }
 
+  task_net::State_t state;
   task_net::Node * test;
   test = new task_net::Node(name_param,
                             peers_param,
                             children_param,
                             parent_param,
+                            state,
                             false);
   ros::spin();
   delete test;
