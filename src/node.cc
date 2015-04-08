@@ -169,7 +169,7 @@ void Node::SendToPeer(NodeBitmask node,
 
 void Node::ReceiveFromParent(ConstControlMessagePtr_t msg) {
   // Set activation level from parent
-  // TODO(Luke Fraser) Use mutex to avoid race condition
+  // TODO(Luke Fraser) Use mutex to avoid race condition setup in publisher
   state_.activation_level = msg->activation_level;
   printf("Activation Level: %f\n", msg->activation_level);
 }
