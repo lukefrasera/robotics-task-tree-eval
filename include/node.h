@@ -95,9 +95,12 @@ class Node {
   virtual void NodeInit(boost::posix_time::millisec mtime);
   virtual void PublishStatus();
   virtual void InitializeSubscriber(NodeId_t node);
-  virtual void InitializePublishers(NodeList nodes, PubList *pub);
-  virtual void InitializePublisher(NodeId_t node, ros::Publisher *pub);
-  virtual void InitializeStatePublisher(NodeId_t node, ros::Publisher *pub);
+  virtual void InitializePublishers(NodeList nodes, PubList *pub,
+    const char * topic_addition = "");
+  virtual void InitializePublisher(NodeId_t node, ros::Publisher *pub,
+    const char * topic_addition = "");
+  virtual void InitializeStatePublisher(NodeId_t node, ros::Publisher *pub,
+    const char * topic_addition = "");
   virtual NodeBitmask GetBitmask(std::string name);
   virtual NodeId_t GetNodeId(NodeBitmask id);
   virtual void GenerateNodeBitmaskMap();
@@ -105,6 +108,7 @@ class Node {
   virtual void InitializeBitmasks(NodeList* nodes);
   virtual bool ActivationPrecondition();
 
+ protected:
   State state_;
   NodeId_t name_;
   std::map<NodeBitmask, NodeId_t*, BitmaskLessThan> node_dict_;
@@ -123,6 +127,7 @@ class Node {
   // Subscribers
   ros::Subscriber children_sub_;
   ros::Subscriber peer_sub_;
+  ros::Subscriber parent_sub_;
 
   // Node handler
   ros::NodeHandle pub_nh_;

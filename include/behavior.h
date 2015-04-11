@@ -42,6 +42,9 @@ class ThenBehavior: public Behavior {
     bool use_local_callback_queue = false,
     boost::posix_time::millisec mtime = boost::posix_time::millisec(1000));
   virtual ~ThenBehavior();
+ protected:
+  virtual bool Precondition();
+  virtual uint32_t SpreadActivation();
 };
 class AndBehavior: public Behavior {};
 class OrBehavior: public Behavior {};

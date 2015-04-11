@@ -71,9 +71,9 @@ Node::Node(NodeId_t name, NodeList peers, NodeList children, NodeId_t parent,
   // Setup Publisher/subscribers
   InitializeSubscriber(name_);
   InitializePublishers(children_, &children_pub_list_);
-  InitializePublishers(peers_, &peer_pub_list_);
-  InitializePublisher(parent_, &parent_pub_);
-  InitializeStatePublisher(name_, &self_pub_);
+  InitializePublishers(peers_, &peer_pub_list_, "_peer");
+  InitializePublisher(parent_, &parent_pub_, "_parent");
+  InitializeStatePublisher(name_, &self_pub_, "_state");
   NodeInit(mtime);
 }
 
@@ -178,8 +178,6 @@ void Node::ReceiveFromChildren(ConstControlMessagePtr_t msg) {
   NodeId_t *child = node_dict_[msg->sender];
   child->state.activation_level = msg->activation_level;
   child->state.done = msg->done;
-  // Store respective data to child buffer
-  // TODO(Luke fraser) convert dictionary to pointers
 }
 void Node::ReceiveFromPeers(ConstControlMessagePtr_t msg) {
   state_.activation_level = msg->activation_level;
@@ -294,25 +292,38 @@ void Node::InitializeSubscriber(NodeId_t node) {
     PUB_SUB_QUEUE_SIZE,
     &Node::ReceiveFromChildren,
     this);
+  std::string parent_topic = node.topic + "_parent";
+#ifdef DEBUG
+  printf("[SUBSCRIBER] - Creating Parent Topic: %s\n", parent_topic.c_str());
+#endif
+  parent_sub_ = sub_nh_.subscribe(node.topic,
+    PUB_SUB_QUEUE_SIZE,
+    &Node::ReceiveFromParent,
+    this);
 }
-void Node::InitializePublishers(NodeList nodes, PubList *pub) {
+void Node::InitializePublishers(NodeList nodes, PubList *pub,
+    const char * topic_addition) {
   for (std::vector<NodeId_t>::iterator it = nodes.begin();
     it != nodes.end();
     ++it) {
     ros::Publisher * topic = new ros::Publisher;
     *topic =
-      pub_nh_.advertise<robotics_task_tree_eval::ControlMessage>(it->topic,
+      pub_nh_.advertise<robotics_task_tree_eval::ControlMessage>(
+        it->topic + topic_addition,
         PUB_SUB_QUEUE_SIZE);
 
     pub->push_back(*topic);
     node_dict_[it->mask]->pub = topic;
+    node_dict_[it->mask]->topic += topic_addition;
 #if DEBUG
     printf("[PUBLISHER] - Creating Topic: %s\n", it->topic.c_str());
 #endif
   }
 }
 
-void Node::InitializePublisher(NodeId_t node, ros::Publisher *pub) {
+void Node::InitializePublisher(NodeId_t node, ros::Publisher *pub,
+  const char * topic_addition) {
+  node.topic += topic_addition;
 #ifdef DEBUG
   printf("[PUBLISHER] - Creating Topic: %s\n", node.topic.c_str());
 #endif
@@ -320,15 +331,19 @@ void Node::InitializePublisher(NodeId_t node, ros::Publisher *pub) {
     pub_nh_.advertise<robotics_task_tree_eval::ControlMessage>(node.topic,
       PUB_SUB_QUEUE_SIZE);
   node_dict_[node.mask]->pub = pub;
+  node_dict_[node.mask]->topic += topic_addition;
 }
 
-void Node::InitializeStatePublisher(NodeId_t node, ros::Publisher *pub) {
+void Node::InitializeStatePublisher(NodeId_t node, ros::Publisher *pub,
+  const char * topic_addition) {
+  node.topic += topic_addition;
 #ifdef DEBUG
   printf("[PUBLISHER] - Creating Topic: %s\n", node.topic.c_str());
 #endif
   (*pub) = pub_nh_.advertise<robotics_task_tree_eval::State>(node.topic,
     PUB_SUB_QUEUE_SIZE);
   node_dict_[node.mask]->pub = pub;
+  node_dict_[node.mask]->topic += topic_addition;
 }
 
 NodeBitmask Node::GetBitmask(std::string name) {
