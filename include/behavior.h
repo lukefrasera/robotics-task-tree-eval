@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef INCLUDE_BEHAVIOR_H_
 #define INCLUDE_BEHAVIOR_H_
 
+#include <queue>
 #include "node.h"
 namespace task_net {
 class Behavior: public Node {
@@ -45,9 +46,38 @@ class ThenBehavior: public Behavior {
  protected:
   virtual bool Precondition();
   virtual uint32_t SpreadActivation();
+ private:
+  std::queue<NodeId_t*> activation_queue_;
 };
-class AndBehavior: public Behavior {};
-class OrBehavior: public Behavior {};
+class AndBehavior: public Behavior {
+ public:
+  AndBehavior();
+  AndBehavior(NodeId_t name, NodeList peers, NodeList children,
+    NodeId_t parent,
+    State_t state,
+    bool use_local_callback_queue = false,
+    boost::posix_time::millisec mtime = boost::posix_time::millisec(1000));
+  virtual ~AndBehavior();
+ protected:
+  virtual bool Precondition();
+  virtual uint32_t SpreadActivation();
+};
+class OrBehavior: public Behavior {
+ public:
+  OrBehavior();
+  OrBehavior(NodeId_t name, NodeList peers, NodeList children,
+    NodeId_t parent,
+    State_t state,
+    bool use_local_callback_queue = false,
+    boost::posix_time::millisec mtime = boost::posix_time::millisec(1000));
+  virtual ~OrBehavior();
+ protected:
+  virtual bool Precondition();
+  virtual uint32_t SpreadActivation();
+ private:
+  uint32_t seed;
+  uint32_t random_child_selection;
+};
 class WhileBehavior: public Behavior {};
 }  // namespace task_net
 #endif  // INCLUDE_BEHAVIOR_H_

@@ -66,6 +66,9 @@ struct ControlMessage {
 };
 
 typedef std::vector<NodeId_t> NodeList;
+typedef std::vector<NodeId_t>::iterator NodeListIterator;
+typedef std::vector<NodeId_t*> NodeListPtr;
+typedef std::vector<NodeId_t*>::iterator NodeListPtrIterator;
 typedef std::vector<ros::Publisher> PubList;
 typedef ControlMessage ControlMessage_t;
 }  // namespace task_net

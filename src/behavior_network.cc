@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
 
   task_net::State_t state;
   task_net::Node * test;
-  test = new task_net::ThenBehavior(name_param,
+  test = new task_net::OrBehavior(name_param,
                             peers_param,
                             children_param,
                             parent_param,

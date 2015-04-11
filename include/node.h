@@ -35,6 +35,8 @@ typedef boost::shared_ptr<robotics_task_tree_eval::ControlMessage>
   ControlMessagePtr;
 typedef boost::shared_ptr<ControlMessage_t const>
   ConstControlMessagePtr_t;
+typedef boost::shared_ptr<ControlMessage_t>
+  ControlMessagePtr_t;
 
 // Pre-declare
 class Node;
@@ -68,10 +70,13 @@ class Node {
   // Messaging
   virtual void SendToParent(
     const robotics_task_tree_eval::ControlMessage msg);
+  virtual void SendToParent(const ControlMessagePtr_t msg);
   virtual void SendToChild(NodeBitmask node,
     const robotics_task_tree_eval::ControlMessage msg);
+  virtual void SendToChild(NodeBitmask node, const ControlMessagePtr_t msg);
   virtual void SendToPeer(NodeBitmask node,
     const robotics_task_tree_eval::ControlMessage msg);
+  virtual void SendToPeer(NodeBitmask node, const ControlMessagePtr_t msg);
 
   // Receiving Threads
   virtual void ReceiveFromParent(ConstControlMessagePtr_t msg);
@@ -94,29 +99,30 @@ class Node {
  private:
   virtual void NodeInit(boost::posix_time::millisec mtime);
   virtual void PublishStatus();
-  virtual void InitializeSubscriber(NodeId_t node);
-  virtual void InitializePublishers(NodeList nodes, PubList *pub,
+  virtual void InitializeSubscriber(NodeId_t *node);
+  virtual void InitializePublishers(NodeListPtr nodes, PubList *pub,
     const char * topic_addition = "");
-  virtual void InitializePublisher(NodeId_t node, ros::Publisher *pub,
+  virtual void InitializePublisher(NodeId_t *node, ros::Publisher *pub,
     const char * topic_addition = "");
-  virtual void InitializeStatePublisher(NodeId_t node, ros::Publisher *pub,
+  virtual void InitializeStatePublisher(NodeId_t *node, ros::Publisher *pub,
     const char * topic_addition = "");
   virtual NodeBitmask GetBitmask(std::string name);
   virtual NodeId_t GetNodeId(NodeBitmask id);
   virtual void GenerateNodeBitmaskMap();
   virtual void InitializeBitmask(NodeId_t* node);
-  virtual void InitializeBitmasks(NodeList* nodes);
+  virtual void InitializeBitmasks(NodeListPtr nodes);
   virtual bool ActivationPrecondition();
+  virtual void ActivationFalloff();
 
  protected:
   State state_;
-  NodeId_t name_;
+  NodeId_t *name_;
   std::map<NodeBitmask, NodeId_t*, BitmaskLessThan> node_dict_;
   std::string name_id_;
   NodeBitmask mask_;
-  NodeList peers_;
-  NodeList children_;
-  NodeId_t parent_;
+  NodeListPtr peers_;
+  NodeListPtr children_;
+  NodeId_t *parent_;
 
   // Publishers
   PubList children_pub_list_;
