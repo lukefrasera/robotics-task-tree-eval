@@ -11,13 +11,17 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   message_generation
 )
-if(${CMAKE_BUILD_TYPE} STREQUAL Debug)
-  set(DEBUG 1)
-  message("====================================================================")
-  message("=============================DEBUG MODE=============================")
-  message("====================================================================")
-  add_definitions(-DDEBUG=${DEBUG})
-endif(${CMAKE_BUILD_TYPE} STREQUAL Debug)
+
+if(${CMAKE_BUILD_TYPE} EXISTS)
+  if( ${CMAKE_BUILD_TYPE} STREQUAL Debug )
+    set(DEBUG 1)
+    message("====================================================================")
+    message("=============================DEBUG MODE=============================")
+    message("====================================================================")
+    add_definitions(-DDEBUG=${DEBUG})
+  endif(${CMAKE_BUILD_TYPE} STREQUAL Debug)
+endif(${CMAKE_BUILD_TYPE} EXISTS)
+
 
 
 ## System dependencies are found with CMake's conventions
@@ -91,8 +95,8 @@ generate_messages(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES robotics-task-tree-eval
+  INCLUDE_DIRS include include/${PACKAGE_NAME}/
+  LIBRARIES robotics_task_tree
   CATKIN_DEPENDS roscpp rospy std_msgs message_runtime
 #  DEPENDS system_lib
 )
@@ -117,15 +121,36 @@ include_directories(
 ## Declare a cpp executable
 # add_executable(robotics-task-tree-eval_node src/robotics-task-tree-eval_node.cpp)
 
-add_executable(robotics_task_tree_eval  
+add_executable(robotics_task_tree_eval_net
   src/behavior_network.cc
   src/behavior.cc
   src/node.cc
 )
-target_link_libraries(robotics_task_tree_eval
+target_link_libraries(robotics_task_tree_eval_net
   ${catkin_LIBRARIES}
 )
 
+add_dependencies(robotics_task_tree_eval_net
+  ${catkin_EXPORTED_TARGETS}
+  # ${robotics_task_tree_eval_msgs_gencpp}
+  robotics_task_tree_eval_generate_messages_cpp
+)
+
+message("EXPROTED TARGETS:=======================")
+message("=================" ${catkin_EXPORTED_TARGETS})
+message("========================================")
+
+
+add_library(robotics_task_tree
+  src/${PROJECT_NAME}/node.cc
+  src/${PROJECT_NAME}/behavior.cc
+)
+
+add_dependencies(robotics_task_tree
+  ${catkin_EXPORTED_TARGETS}
+  # ${robotics_task_tree_eval_msgs_gencpp}
+  robotics_task_tree_eval_generate_messages_cpp
+)
 ## Specify libraries to link a library or executable target against
 
 #############
@@ -143,18 +168,17 @@ target_link_libraries(robotics_task_tree_eval
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS robotics-task-tree-eval robotics-task-tree-eval_node
-#   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
+install(TARGETS robotics_task_tree
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
 ## Mark cpp header files for installation
-# install(DIRECTORY include/${PROJECT_NAME}/
-#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-#   FILES_MATCHING PATTERN "*.h"
-#   PATTERN ".svn" EXCLUDE
-# )
+install(DIRECTORY include/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+  FILES_MATCHING PATTERN "*.h"
+)
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 # install(FILES
