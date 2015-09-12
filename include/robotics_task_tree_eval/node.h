@@ -24,7 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 #include <string>
 #include <map>
-#include "node_types.h"
+#include "robotics_task_tree_eval/node_types.h"
 #include "robotics_task_tree_eval/ControlMessage.h"
 
 namespace task_net {

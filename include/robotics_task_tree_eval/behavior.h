@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define INCLUDE_BEHAVIOR_H_
 
 #include <queue>
-#include "node.h"
+#include "robotics_task_tree_eval/node.h"
 namespace task_net {
 class Behavior: public Node {
  public:

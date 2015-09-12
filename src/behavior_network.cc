@@ -25,8 +25,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 #include <string>
 #include <map>
-#include "../include/behavior.h"
-#include "node_types.h"
+#include "robotics_task_tree_eval/behavior.h"
+#include "robotics_task_tree_eval/node_types.h"
 
 void EndingFunc(int signal) {
   printf("Closing Program...\n");

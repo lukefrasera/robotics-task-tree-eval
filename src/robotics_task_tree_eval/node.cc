@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-#include "../include/node.h"
+#include "robotics_task_tree_eval/node.h"
 #include <boost/thread/thread.hpp>
 #include <boost/date_time.hpp>
 #include <boost/algorithm/string/split.hpp>
