@@ -12,7 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
 )
 
-if(${CMAKE_BUILD_TYPE} EXISTS)
+if(DEFINED ${CMAKE_BUILD_TYPE})
   if( ${CMAKE_BUILD_TYPE} STREQUAL Debug )
     set(DEBUG 1)
     message("====================================================================")
@@ -20,7 +20,7 @@ if(${CMAKE_BUILD_TYPE} EXISTS)
     message("====================================================================")
     add_definitions(-DDEBUG=${DEBUG})
   endif(${CMAKE_BUILD_TYPE} STREQUAL Debug)
-endif(${CMAKE_BUILD_TYPE} EXISTS)
+endif(DEFINED ${CMAKE_BUILD_TYPE})
 
 
 
