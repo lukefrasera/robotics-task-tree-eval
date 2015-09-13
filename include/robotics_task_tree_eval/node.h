@@ -99,6 +99,7 @@ class Node {
  private:
   virtual void NodeInit(boost::posix_time::millisec mtime);
   virtual void PublishStatus();
+  virtual void PublishDoneParent();
   virtual void InitializeSubscriber(NodeId_t *node);
   virtual void InitializePublishers(NodeListPtr nodes, PubList *pub,
     const char * topic_addition = "");
@@ -138,6 +139,7 @@ class Node {
   // Node handler
   ros::NodeHandle pub_nh_;
   ros::NodeHandle sub_nh_;
+  ros::NodeHandle local_;
 
   // Threads
   boost::thread *update_thread;

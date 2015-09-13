@@ -12,15 +12,13 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
 )
 
-if(DEFINED ${CMAKE_BUILD_TYPE})
-  if( ${CMAKE_BUILD_TYPE} STREQUAL Debug )
-    set(DEBUG 1)
-    message("====================================================================")
-    message("=============================DEBUG MODE=============================")
-    message("====================================================================")
-    add_definitions(-DDEBUG=${DEBUG})
-  endif(${CMAKE_BUILD_TYPE} STREQUAL Debug)
-endif(DEFINED ${CMAKE_BUILD_TYPE})
+if( ${CMAKE_BUILD_TYPE} STREQUAL Debug )
+  set(DEBUG 1)
+  message("====================================================================")
+  message("=============================DEBUG MODE=============================")
+  message("====================================================================")
+  add_definitions(-DDEBUG=${DEBUG})
+endif(${CMAKE_BUILD_TYPE} STREQUAL Debug)
 
 
 
@@ -134,10 +132,6 @@ add_dependencies(robotics_task_tree_eval_net
   # ${robotics_task_tree_eval_msgs_gencpp}
   robotics_task_tree_eval_generate_messages_cpp
 )
-
-message("EXPROTED TARGETS:=======================")
-message("=================" ${catkin_EXPORTED_TARGETS})
-message("========================================")
 
 
 add_library(robotics_task_tree

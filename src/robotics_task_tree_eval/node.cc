@@ -39,7 +39,7 @@ Node::Node() {
 
 Node::Node(NodeId_t name, NodeList peers, NodeList children, NodeId_t parent,
   State_t state,
-  bool use_local_callback_queue, boost::posix_time::millisec mtime) {
+  bool use_local_callback_queue, boost::posix_time::millisec mtime) : local_("~"){
   if (use_local_callback_queue) {
   #ifdef DEBUG
     printf("Local Callback Queues\n");
@@ -97,7 +97,7 @@ void Node::InitializeBitmasks(NodeListPtr nodes) {
 
 void Node::GenerateNodeBitmaskMap() {
   std::vector<std::string> nodes;
-  if (pub_nh_.getParam("Nodes", nodes)) {
+  if (local_.getParam("NodeList", nodes)) {
     printf("Generating BitmaskMap\n");
     for (std::vector<std::string>::iterator it = nodes.begin();
         it != nodes.end(); ++it) {
@@ -218,6 +218,7 @@ void WorkThread(Node *node) {
   boost::unique_lock<boost::mutex> lck(node->mut);
   node->state_.active = false;
   node->state_.done = true;
+  node->PublishDoneParent();
 }
 // Initialize node threads and variables
 void Node::NodeInit(boost::posix_time::millisec mtime) {
@@ -240,19 +241,23 @@ void Node::Update() {
       // Check Preconditions
       if (Precondition()) {
 #ifdef DEBUG
-        printf("Preconditions Satisfied Safe To Do Work!\n");
+        ROS_INFO("Node: %s - Preconditions Satisfied Safe To Do Work!",
+          name_->topic.c_str());
 #endif
         Activate();
       } else {
 #ifdef DEBUG
-        printf("Preconditions Not Satisfied, Spreading Activation!\n");
+        ROS_INFO("Node: %s|Preconditions Not Satisfied, Spreading Activation!",
+          name_->topic.c_str());
 #endif
         SpreadActivation();
       }
       ActivationFalloff();
     } else {
 #ifdef DEBUG
-      printf("Not Active: %f\n", state_.activation_level);
+      // printf("Not Active: %f\n", state_.activation_level);
+      ROS_INFO("Node: %s - Not Active: %f", name_->topic.c_str(),
+        state_.activation_level);
 #endif
     }
   }
@@ -281,6 +286,15 @@ void Node::PublishStatus() {
   boost::shared_ptr<State_t> msg(new State_t);
   *msg = state_;
   self_pub_.publish(msg);
+  // printf("Publish Status: %s\n", msg->data.c_str());
+}
+
+void Node::PublishDoneParent() {
+  ControlMessagePtr_t msg(new ControlMessage_t);
+  msg->sender = mask_;
+  msg->activation_level = state_.activation_level;
+  msg->done = state_.done;
+  parent_pub_.publish(msg);
   // printf("Publish Status: %s\n", msg->data.c_str());
 }
 

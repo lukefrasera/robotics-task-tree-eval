@@ -29,6 +29,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace task_net {
 
+typedef enum {  // Eight possible node types
+  THEN = 0,     // 0
+  OR,           // 1
+  AND,          // 2
+  BEHAVIOR,     // 3
+  ROOT,         // 4
+  PLACE,        // 5
+} NodeTypes_t;
+
+typedef enum {  // Eight possible robots
+  PR2 = 0, // 0
+  BAXTER,  // 1
+} RobotTypes;
 
 struct NodeBitmask {
   uint8_t type;
