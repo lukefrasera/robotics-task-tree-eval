@@ -105,7 +105,7 @@ void Node::GenerateNodeBitmaskMap() {
       nptr->topic = *it;
       nptr->mask = GetBitmask(*it);
       nptr->pub = NULL;
-      nptr->state =  {nptr->mask, false, false, 0.0f};
+      nptr->state =  {nptr->mask, false, false, 0.0f, 0.0f};
       node_dict_[nptr->mask] = nptr;
       printf("Adding [%s] to Dictionary.\n", nptr->topic.c_str());
     }

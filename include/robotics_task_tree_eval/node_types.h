@@ -61,6 +61,7 @@ struct State {
   bool active;
   bool done;
   float activation_level;
+  float activation_potential;
 };
 typedef State State_t;
 struct NodeId {
@@ -75,6 +76,7 @@ typedef NodeId NodeId_t;
 struct ControlMessage {
   NodeBitmask sender;
   float activation_level;
+  float activation_potential;
   bool done;
 };
 
@@ -222,6 +224,7 @@ struct Serializer<task_net::State_t> {
     stream.next(t.active);
     stream.next(t.done);
     stream.next(t.activation_level);
+    stream.next(t.activation_potential);
   }
 
   ROS_DECLARE_ALLINONE_SERIALIZER;
@@ -248,6 +251,7 @@ struct Serializer<task_net::ControlMessage_t> {
   inline static void allInOne(Stream& stream, T t) {
     stream.next(t.sender);
     stream.next(t.activation_level);
+    stream.next(t.activation_potential);
     stream.next(t.done);
   }
 
