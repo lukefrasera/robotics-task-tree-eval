@@ -52,6 +52,15 @@ AndBehavior::AndBehavior(NodeId_t name, NodeList peers, NodeList children,
       state) {}
 AndBehavior::~AndBehavior() {}
 
+void AndBehavior::UpdateActivationPotential() {
+  float sum = 0;
+  for (NodeListPtrIterator it = children_.begin();
+      it != children_.end(); ++it) {
+    sum += (*it)->state.activation_potential;
+  }
+  state_.activation_potential = sum / children_.size();
+}
+
 bool AndBehavior::Precondition() {
   bool satisfied = true;
   for (NodeListPtrIterator it = children_.begin();
@@ -97,6 +106,15 @@ ThenBehavior::ThenBehavior(NodeId_t name, NodeList peers, NodeList children,
 }
 ThenBehavior::~ThenBehavior() {}
 
+void ThenBehavior::UpdateActivationPotential() {
+  float sum = 0;
+  for (NodeListPtrIterator it = children_.begin();
+      it != children_.end(); ++it) {
+    sum += (*it)->state.activation_potential;
+  }
+  state_.activation_potential = sum / children_.size();
+}
+
 bool ThenBehavior::Precondition() {
   bool satisfied = true;
   for (NodeListPtrIterator it = children_.begin();
@@ -141,6 +159,17 @@ OrBehavior::OrBehavior(NodeId_t name, NodeList peers, NodeList children,
   random_child_selection = rand_r(&seed) % children_.size();
 }
 OrBehavior::~OrBehavior() {}
+
+void OrBehavior::UpdateActivationPotential() {
+  float max = 0;
+  for (NodeListPtrIterator it = children_.begin();
+      it != children_.end(); ++it) {
+    float value = (*it)->state.activation_potential;
+    if (value > max)
+      max = value;
+  }
+  state_.activation_potential = max;
+}
 
 bool OrBehavior::Precondition() {
   if (children_[random_child_selection]->state.done)

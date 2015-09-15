@@ -12,13 +12,13 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
 )
 
-if( ${CMAKE_BUILD_TYPE} STREQUAL Debug )
+if( "${CMAKE_BUILD_TYPE}" STREQUAL Debug )
   set(DEBUG 1)
   message("====================================================================")
   message("=============================DEBUG MODE=============================")
   message("====================================================================")
   add_definitions(-DDEBUG=${DEBUG})
-endif(${CMAKE_BUILD_TYPE} STREQUAL Debug)
+endif( "${CMAKE_BUILD_TYPE}" STREQUAL Debug )
 
 
 

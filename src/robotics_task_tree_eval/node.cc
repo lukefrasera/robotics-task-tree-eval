@@ -38,8 +38,9 @@ Node::Node() {
 }
 
 Node::Node(NodeId_t name, NodeList peers, NodeList children, NodeId_t parent,
-  State_t state,
-  bool use_local_callback_queue, boost::posix_time::millisec mtime) : local_("~"){
+    State_t state,
+    bool use_local_callback_queue, boost::posix_time::millisec mtime):
+    local_("~") {
   if (use_local_callback_queue) {
   #ifdef DEBUG
     printf("Local Callback Queues\n");
@@ -70,6 +71,7 @@ Node::Node(NodeId_t name, NodeList peers, NodeList children, NodeId_t parent,
   state_.active = false;
   state_.done = false;
   state_.activation_level = 0.0f;
+  state_.activation_potential = 0.0f;
 
   // Get bitmask
   printf("name: %s\n", name_->topic.c_str());
@@ -98,7 +100,7 @@ void Node::InitializeBitmasks(NodeListPtr nodes) {
 void Node::GenerateNodeBitmaskMap() {
   std::vector<std::string> nodes;
   if (local_.getParam("NodeList", nodes)) {
-    printf("Generating BitmaskMap\n");
+    // printf("Generating BitmaskMap\n");
     for (std::vector<std::string>::iterator it = nodes.begin();
         it != nodes.end(); ++it) {
       NodeId_t *nptr = new NodeId_t;
@@ -107,7 +109,7 @@ void Node::GenerateNodeBitmaskMap() {
       nptr->pub = NULL;
       nptr->state =  {nptr->mask, false, false, 0.0f, 0.0f};
       node_dict_[nptr->mask] = nptr;
-      printf("Adding [%s] to Dictionary.\n", nptr->topic.c_str());
+      // printf("Adding [%s] to Dictionary.\n", nptr->topic.c_str());
     }
   }
 }
@@ -192,6 +194,7 @@ void Node::ReceiveFromChildren(ConstControlMessagePtr_t msg) {
   NodeId_t *child = node_dict_[msg->sender];
   boost::unique_lock<boost::mutex> lck(mut);
   child->state.activation_level = msg->activation_level;
+  child->state.activation_potential = msg->activation_potential;
   child->state.done = msg->done;
 }
 void Node::ReceiveFromPeers(ConstControlMessagePtr_t msg) {
@@ -286,13 +289,29 @@ void Node::PublishStatus() {
   boost::shared_ptr<State_t> msg(new State_t);
   *msg = state_;
   self_pub_.publish(msg);
-  // printf("Publish Status: %s\n", msg->data.c_str());
+
+  // Publish Activation Potential
+  PublishActivationPotential();
 }
+
+void Node::PublishActivationPotential() {
+  // Update Activation Potential
+  UpdateActivationPotential();
+  ControlMessagePtr_t msg(new ControlMessage_t);
+  msg->sender = mask_;
+  msg->activation_level = state_.activation_level;
+  msg->activation_potential = state_.activation_potential;
+  msg->done = state_.done;
+  parent_pub_.publish(msg);
+}
+
+void Node::UpdateActivationPotential() {}
 
 void Node::PublishDoneParent() {
   ControlMessagePtr_t msg(new ControlMessage_t);
   msg->sender = mask_;
   msg->activation_level = state_.activation_level;
+  msg->activation_potential = state_.activation_potential;
   msg->done = state_.done;
   parent_pub_.publish(msg);
   // printf("Publish Status: %s\n", msg->data.c_str());
@@ -308,7 +327,8 @@ float Node::ActivationLevel() {
   return state_.activation_level;
 }
 bool Node::Precondition() {
-  // TODO(Luke Fraser) Merge children/peer/name/parent lists to point to the same as dictionary
+  // TODO(Luke Fraser) Merge children/peer/name/parent lists to point to the
+  // same as dictionary
   bool satisfied = true;
   for (NodeListPtrIterator it = children_.begin();
       it != children_.end(); ++it) {

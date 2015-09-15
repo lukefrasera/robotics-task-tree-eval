@@ -99,6 +99,8 @@ class Node {
  private:
   virtual void NodeInit(boost::posix_time::millisec mtime);
   virtual void PublishStatus();
+  virtual void PublishActivationPotential();
+  virtual void UpdateActivationPotential();
   virtual void PublishDoneParent();
   virtual void InitializeSubscriber(NodeId_t *node);
   virtual void InitializePublishers(NodeListPtr nodes, PubList *pub,
